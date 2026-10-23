@@ -1,0 +1,1366 @@
+/**
+ * CYBER-LAB CUSTOM PC - 3D STUDIO CONFIGURATOR ENGINE
+ * Hero 3D Computer Viewport, Bright Studio Lighting, Slide-out Hover Catalog Drawer,
+ * Dedicated Full-Page Component Catalog, LocalStorage Build Save/Load System,
+ * Real-time Compatibility, TDP Power Meter & FPS Gaming Forecast.
+ */
+
+// Application State
+const state = {
+  selected: {
+    cpu: null,
+    cooler: null,
+    motherboard: null,
+    ram: null,
+    gpu: null,
+    storage: null,
+    psu: null,
+    case: null
+  },
+  activeRgbTheme: 'cyan',
+  activeResolution: '1080p',
+  soundEnabled: true,
+  audioCtx: null,
+
+  // 3D Engine & Realistic Assembly
+  viewer3D: null,
+  assemblyStep: 0,
+  isPoweredOn: true,
+  studioTheme: 'white', // Bright Studio White default
+
+  // Drawer & Catalog Navigation
+  drawerCat: 'case',
+  drawerSearch: '',
+  isDrawerPinned: false,
+
+  // Full Catalog Page Filters
+  catalogCat: 'all',
+  catalogSearch: '',
+  catalogSort: 'default',
+
+  // LocalStorage Saved Builds
+  savedBuilds: []
+};
+
+// ==========================================================================
+// 1. REALISTIC ASSEMBLY STEPS WORKFLOW
+// ==========================================================================
+const ASSEMBLY_STEPS = [
+  {
+    id: 'glass',
+    badge: 'ШАГ 1 ИЗ 8',
+    title: 'Подготовка шасси: Снять стекло',
+    desc: 'Снимите закаленное стекло, чтобы получить прямой доступ к внутренностям корпуса.',
+    actionText: 'Снять стекло',
+    part: 'glass'
+  },
+  {
+    id: 'motherboard',
+    badge: 'ШАГ 2 ИЗ 8',
+    title: 'Установка материнской платы',
+    desc: 'Совместите плату с латунными стойками и прикрутите винтами по периметру.',
+    actionText: 'Прикрутить плату',
+    part: 'motherboard'
+  },
+  {
+    id: 'cpu',
+    badge: 'ШАГ 3 ИЗ 8',
+    title: 'Установка процессора в сокет',
+    desc: 'Поднимите прижимной рычаг, совместите ключ и опустите CPU в сокет.',
+    actionText: 'Установить CPU в сокет',
+    part: 'cpu'
+  },
+  {
+    id: 'paste',
+    badge: 'ШАГ 4 ИЗ 8',
+    title: 'Нанесение термопасты',
+    desc: 'Выдавите каплю высокоэффективной термопасты по центру крышки процессора.',
+    actionText: 'Выдавить термопасту',
+    part: 'thermalPaste'
+  },
+  {
+    id: 'cooler',
+    badge: 'ШАГ 5 ИЗ 8',
+    title: 'Монтаж охлаждения (Кулер / СВО)',
+    desc: 'Установите радиатор или помпу на процессор и затяните винты крест-накрест.',
+    actionText: 'Закрепить кулер',
+    part: 'cooler'
+  },
+  {
+    id: 'ram',
+    badge: 'ШАГ 6 ИЗ 8',
+    title: 'Установка оперативной памяти',
+    desc: 'Вставьте планки в слоты 2 и 4 до громкого двойного щелчка фиксаторов.',
+    actionText: 'Защёлкнуть ОЗУ',
+    part: 'ram'
+  },
+  {
+    id: 'gpu',
+    badge: 'ШАГ 7 ИЗ 8',
+    title: 'Установка видеокарты в PCIe',
+    desc: 'Опустите видеокарту в слот PCIe 4.0/5.0 x16 и подключите кабель питания.',
+    actionText: 'Вставить видеокарту',
+    part: 'gpu'
+  },
+  {
+    id: 'boot',
+    badge: 'ШАГ 8 ИЗ 8',
+    title: 'Первый запуск (First Boot)',
+    desc: 'Верните стекло на корпус и нажмите кнопку POWER ON для старта POST-проверки!',
+    actionText: 'ВКЛЮЧИТЬ ПК (POWER ON)',
+    part: 'boot'
+  }
+];
+
+// ==========================================================================
+// 2. REALISTIC SOUND SYNTHESIS ENGINE (Web Audio API)
+// ==========================================================================
+class CyberSound {
+  static init() {
+    if (!state.audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) {
+        state.audioCtx = new AudioContext();
+      }
+    }
+    if (state.audioCtx && state.audioCtx.state === 'suspended') {
+      state.audioCtx.resume();
+    }
+  }
+
+  static playTone(freq = 880, type = 'sine', duration = 0.08, gainVal = 0.04) {
+    if (!state.soundEnabled) return;
+    try {
+      this.init();
+      if (!state.audioCtx) return;
+      const ctx = state.audioCtx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  static playSelect() {
+    this.playTone(1200, 'sine', 0.05, 0.03);
+  }
+
+  static playScrewSound() {
+    if (!state.soundEnabled) return;
+    try {
+      this.init();
+      if (!state.audioCtx) return;
+      this.playTone(420, 'sawtooth', 0.04, 0.04);
+      setTimeout(() => this.playTone(650, 'triangle', 0.05, 0.03), 40);
+    } catch (e) {}
+  }
+
+  static playRamClickSound() {
+    if (!state.soundEnabled) return;
+    try {
+      this.init();
+      if (!state.audioCtx) return;
+      this.playTone(180, 'square', 0.03, 0.08);
+      setTimeout(() => this.playTone(850, 'sine', 0.05, 0.06), 25);
+    } catch (e) {}
+  }
+
+  static playPasteSound() {
+    this.playTone(320, 'triangle', 0.12, 0.03);
+  }
+
+  static playRelayClick() {
+    if (!state.soundEnabled) return;
+    try {
+      this.init();
+      if (!state.audioCtx) return;
+      this.playTone(300, 'square', 0.04, 0.08);
+      setTimeout(() => this.playTone(180, 'triangle', 0.06, 0.05), 30);
+    } catch (e) {}
+  }
+
+  static playPreset() {
+    this.playTone(600, 'sine', 0.06, 0.04);
+    setTimeout(() => this.playTone(900, 'sine', 0.06, 0.04), 50);
+    setTimeout(() => this.playTone(1400, 'sine', 0.1, 0.05), 110);
+  }
+
+  static playWarning() {
+    this.playTone(300, 'sawtooth', 0.15, 0.06);
+  }
+
+  static playBiosBeep() {
+    if (!state.soundEnabled) return;
+    this.playTone(1000, 'sine', 0.18, 0.08);
+  }
+}
+
+// ==========================================================================
+// 3. APPLICATION INITIALIZATION
+// ==========================================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadSavedBuildsFromStorage();
+  initPresets(PC_DATA.presets.optimal);
+  
+  // Render sub-views
+  renderDrawerChips();
+  renderDrawerItems();
+  renderFullCatalog();
+  renderSavedBuildsList();
+  updateUI();
+  setupEventListeners();
+
+  // Initialize 3D Engine
+  if (typeof CyberPC3DViewer !== 'undefined') {
+    state.viewer3D = new CyberPC3DViewer('canvas3dContainer');
+    state.viewer3D.setStudioTheme('white'); // Explicit White Studio illumination
+    sync3DWithState();
+  }
+
+  updateAssemblyStepUI();
+});
+
+function initPresets(preset) {
+  Object.keys(preset).forEach(key => {
+    if (key !== 'name' && PC_DATA.components[key]) {
+      const component = PC_DATA.components[key].find(c => c.id === preset[key]);
+      if (component) {
+        state.selected[key] = component;
+      }
+    }
+  });
+}
+
+function sync3DWithState() {
+  if (!state.viewer3D) return;
+  const psuId = state.selected.psu ? state.selected.psu.id : undefined;
+  if (state.selected.case) state.viewer3D.buildCase(state.selected.case.id, psuId);
+  if (state.selected.motherboard) state.viewer3D.buildMotherboard(state.selected.motherboard.id);
+  if (state.selected.cooler) state.viewer3D.buildCooler(state.selected.cooler.id);
+  if (state.selected.gpu) state.viewer3D.buildGpu(state.selected.gpu.id);
+  if (state.selected.ram) state.viewer3D.buildRam(state.selected.ram.id);
+  if (state.selected.storage) state.viewer3D.buildSsd(state.selected.storage.id);
+  state.viewer3D.setRgbTheme(state.activeRgbTheme);
+
+  // Update floating case name badge in 3D
+  const caseBadge = document.getElementById('floatingCaseName');
+  if (caseBadge && state.selected.case) {
+    caseBadge.textContent = state.selected.case.name;
+  }
+}
+
+// ==========================================================================
+// 4. SLIDE-OUT HOVER DRAWER LOGIC
+// ==========================================================================
+function renderDrawerChips() {
+  const container = document.getElementById('drawerCatChips');
+  if (!container) return;
+  container.innerHTML = '';
+
+  PC_DATA.categories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = `drawer-chip-btn ${state.drawerCat === cat.id ? 'active' : ''}`;
+    btn.textContent = cat.name.split(' ')[0]; // short name
+    btn.dataset.catId = cat.id;
+
+    btn.addEventListener('click', () => {
+      setDrawerCategory(cat.id);
+    });
+
+    container.appendChild(btn);
+  });
+}
+
+function setDrawerCategory(catId) {
+  state.drawerCat = catId;
+  const catObj = PC_DATA.categories.find(c => c.id === catId);
+  const title = document.getElementById('drawerCatTitle');
+  if (title && catObj) {
+    title.textContent = `ВЫБОР: ${catObj.name.toUpperCase()}`;
+  }
+
+  // Update active rail icons
+  document.querySelectorAll('.rail-cat-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === catId);
+  });
+
+  // Update chips
+  document.querySelectorAll('.drawer-chip-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.catId === catId);
+  });
+
+  renderDrawerItems();
+  CyberSound.playSelect();
+}
+
+function renderDrawerItems() {
+  const container = document.getElementById('drawerItemsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const catId = state.drawerCat;
+  let items = PC_DATA.components[catId] || [];
+
+  // Filter if search query exists
+  if (state.drawerSearch.trim()) {
+    const q = state.drawerSearch.toLowerCase().trim();
+    items = items.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const desc = (item.desc || '').toLowerCase();
+      const badge = (item.badge || '').toLowerCase();
+      const socket = (item.socket || '').toLowerCase();
+      const chip = (item.chip || '').toLowerCase();
+      return name.includes(q) || desc.includes(q) || badge.includes(q) || socket.includes(q) || chip.includes(q);
+    });
+  }
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: #64748b; font-family: var(--font-mono); font-size: 0.8rem;">
+        Ничего не найдено по запросу "${state.drawerSearch}"
+      </div>
+    `;
+    return;
+  }
+
+  items.forEach(item => {
+    const isSelected = state.selected[catId] && state.selected[catId].id === item.id;
+    const card = document.createElement('div');
+    card.className = `drawer-item-card ${isSelected ? 'selected' : ''}`;
+
+    let tagsHtml = '';
+    if (item.socket) tagsHtml += `<span class="drawer-mini-tag">${item.socket}</span>`;
+    if (item.vram) tagsHtml += `<span class="drawer-mini-tag">${item.vram}</span>`;
+    if (item.ramType) tagsHtml += `<span class="drawer-mini-tag">${item.ramType}</span>`;
+    if (item.tdp) tagsHtml += `<span class="drawer-mini-tag">${item.tdp}W</span>`;
+    if (item.badge) tagsHtml += `<span class="drawer-mini-tag" style="color:var(--neon-pink);">${item.badge}</span>`;
+
+    card.innerHTML = `
+      <div class="drawer-item-info">
+        <span class="drawer-item-name">${item.name}</span>
+        <div class="drawer-item-meta">${tagsHtml}</div>
+      </div>
+      <div class="drawer-item-price">${formatRub(item.price)}</div>
+    `;
+
+    card.addEventListener('click', () => {
+      selectComponent(catId, item);
+      renderDrawerItems();
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// ==========================================================================
+// 5. COMPONENT SELECTION & REAL-TIME 3D UPDATES
+// ==========================================================================
+function selectComponent(catId, item) {
+  state.selected[catId] = item;
+
+  // Audio feedback
+  if (catId === 'gpu' || catId === 'ram') {
+    CyberSound.playRamClickSound();
+  } else if (catId === 'cooler' || catId === 'motherboard' || catId === 'storage') {
+    CyberSound.playScrewSound();
+  } else if (catId === 'case' || catId === 'psu') {
+    CyberSound.playRelayClick();
+  } else {
+    CyberSound.playSelect();
+  }
+
+  // Instant 3D Component Swap & Flash
+  if (state.viewer3D) {
+    state.viewer3D.updateComponent(catId, item.id);
+  }
+
+  // Update floating case name badge in 3D
+  const caseBadge = document.getElementById('floatingCaseName');
+  if (caseBadge && state.selected.case) {
+    caseBadge.textContent = state.selected.case.name;
+  }
+
+  updateUI();
+  showToast(`Деталь обновлена: ${item.name}`);
+}
+
+// ==========================================================================
+// 6. DEDICATED FULL-PAGE COMPONENT CATALOG VIEW
+// ==========================================================================
+function renderFullCatalog() {
+  const container = document.getElementById('catalogGridContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  let allItems = [];
+
+  if (state.catalogCat === 'all') {
+    Object.keys(PC_DATA.components).forEach(catId => {
+      PC_DATA.components[catId].forEach(item => {
+        allItems.push({ ...item, _catId: catId });
+      });
+    });
+  } else {
+    const items = PC_DATA.components[state.catalogCat] || [];
+    items.forEach(item => {
+      allItems.push({ ...item, _catId: state.catalogCat });
+    });
+  }
+
+  // Search filter
+  if (state.catalogSearch.trim()) {
+    const q = state.catalogSearch.toLowerCase().trim();
+    allItems = allItems.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const desc = (item.desc || '').toLowerCase();
+      const badge = (item.badge || '').toLowerCase();
+      const socket = (item.socket || '').toLowerCase();
+      const chip = (item.chip || '').toLowerCase();
+      return name.includes(q) || desc.includes(q) || badge.includes(q) || socket.includes(q) || chip.includes(q);
+    });
+  }
+
+  // Sorting
+  if (state.catalogSort === 'price-asc') {
+    allItems.sort((a, b) => a.price - b.price);
+  } else if (state.catalogSort === 'price-desc') {
+    allItems.sort((a, b) => b.price - a.price);
+  } else if (state.catalogSort === 'power-desc') {
+    allItems.sort((a, b) => (b.tdp || b.wattage || 0) - (a.tdp || a.wattage || 0));
+  }
+
+  // Counter
+  const countLabel = document.getElementById('catalogResultsCount');
+  if (countLabel) {
+    countLabel.textContent = `Показано: ${allItems.length} комплектующих`;
+  }
+
+  if (allItems.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 60px 20px; text-align: center; color: #94a3b8; font-family: var(--font-display); font-size: 1.1rem;">
+        По вашему запросу «${state.catalogSearch}» ничего не найдено.
+      </div>
+    `;
+    return;
+  }
+
+  allItems.forEach(item => {
+    const catId = item._catId;
+    const catObj = PC_DATA.categories.find(c => c.id === catId);
+    const isSelected = state.selected[catId] && state.selected[catId].id === item.id;
+
+    const card = document.createElement('div');
+    card.className = `catalog-product-card ${isSelected ? 'in-build' : ''}`;
+
+    let specChips = '';
+    if (item.socket) specChips += `<span class="spec-chip accent">Сокет: ${item.socket}</span>`;
+    if (item.cores) specChips += `<span class="spec-chip">${item.cores}</span>`;
+    if (item.freq) specChips += `<span class="spec-chip">${item.freq}</span>`;
+    if (item.tdp) specChips += `<span class="spec-chip">TDP: ${item.tdp} Вт</span>`;
+    if (item.maxTdp) specChips += `<span class="spec-chip">Отвод: ${item.maxTdp} Вт</span>`;
+    if (item.vram) specChips += `<span class="spec-chip accent">${item.vram}</span>`;
+    if (item.capacity) specChips += `<span class="spec-chip">${item.capacity}</span>`;
+    if (item.speed) specChips += `<span class="spec-chip">${item.speed}</span>`;
+    if (item.ramType) specChips += `<span class="spec-chip accent">${item.ramType}</span>`;
+    if (item.wattage) specChips += `<span class="spec-chip accent">${item.wattage} Вт</span>`;
+    if (item.cert) specChips += `<span class="spec-chip">${item.cert}</span>`;
+
+    card.innerHTML = `
+      <div>
+        <div class="product-top-row">
+          <span class="product-cat-badge">${catObj ? catObj.name : catId}</span>
+          ${item.badge ? `<span class="product-tier-badge">${item.badge}</span>` : ''}
+        </div>
+        <h3 class="product-title" style="margin-top: 8px;">${item.name}</h3>
+        <p class="product-desc" style="margin-top: 6px;">${item.desc || ''}</p>
+        <div class="product-specs-grid" style="margin-top: 12px;">${specChips}</div>
+      </div>
+
+      <div class="product-bottom-row">
+        <div class="product-price">${formatRub(item.price)}</div>
+        <button class="btn-insert-build ${isSelected ? 'selected' : ''}" data-cat-id="${catId}" data-item-id="${item.id}">
+          ${isSelected ? '✔ В сборке' : '➕ Вставить в сборку'}
+        </button>
+      </div>
+    `;
+
+    const insertBtn = card.querySelector('.btn-insert-build');
+    insertBtn.addEventListener('click', () => {
+      selectComponent(catId, item);
+      renderFullCatalog();
+      renderDrawerItems();
+      
+      // Navigate smoothly back to 3D Configurator page
+      switchPage('pageConfigurator');
+      showToast(`Установлено в 3D компьютер: ${item.name}`);
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// ==========================================================================
+// 7. BUILD SAVE & LOAD SYSTEM (LOCALSTORAGE)
+// ==========================================================================
+const STORAGE_KEY = 'cyber_pc_saved_builds';
+
+function loadSavedBuildsFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    state.savedBuilds = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    state.savedBuilds = [];
+  }
+  updateSavedBuildsCounter();
+}
+
+function saveBuildToStorage(buildName) {
+  if (!buildName || !buildName.trim()) {
+    showToast('Введите название для сборки!');
+    return;
+  }
+
+  let total = 0;
+  Object.values(state.selected).forEach(c => { if (c && c.price) total += c.price; });
+
+  const buildRecord = {
+    id: 'build_' + Date.now(),
+    name: buildName.trim(),
+    date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    totalPrice: total,
+    totalWatts: calculateTotalPowerConsumption(),
+    parts: {
+      cpu: state.selected.cpu ? state.selected.cpu.id : null,
+      cooler: state.selected.cooler ? state.selected.cooler.id : null,
+      motherboard: state.selected.motherboard ? state.selected.motherboard.id : null,
+      ram: state.selected.ram ? state.selected.ram.id : null,
+      gpu: state.selected.gpu ? state.selected.gpu.id : null,
+      storage: state.selected.storage ? state.selected.storage.id : null,
+      psu: state.selected.psu ? state.selected.psu.id : null,
+      case: state.selected.case ? state.selected.case.id : null
+    }
+  };
+
+  state.savedBuilds.unshift(buildRecord);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedBuilds));
+  } catch (e) {}
+
+  updateSavedBuildsCounter();
+  renderSavedBuildsList();
+  CyberSound.playPreset();
+  showToast(`Сборка «${buildRecord.name}» успешно сохранена!`);
+}
+
+function loadBuildRecord(buildId) {
+  const build = state.savedBuilds.find(b => b.id === buildId);
+  if (!build) return;
+
+  Object.keys(build.parts).forEach(catId => {
+    const itemId = build.parts[catId];
+    if (itemId && PC_DATA.components[catId]) {
+      const comp = PC_DATA.components[catId].find(c => c.id === itemId);
+      state.selected[catId] = comp || null;
+    } else {
+      state.selected[catId] = null;
+    }
+  });
+
+  sync3DWithState();
+  updateUI();
+  renderDrawerItems();
+  renderFullCatalog();
+  closeModal('saveLoadModal');
+  CyberSound.playPreset();
+  showToast(`Загружена сборка: «${build.name}»`);
+}
+
+function deleteBuildRecord(buildId) {
+  state.savedBuilds = state.savedBuilds.filter(b => b.id !== buildId);
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedBuilds));
+  } catch (e) {}
+  updateSavedBuildsCounter();
+  renderSavedBuildsList();
+  showToast('Сборка удалена из слотов');
+}
+
+function updateSavedBuildsCounter() {
+  const badge = document.getElementById('navSavedCount');
+  const countLabel = document.getElementById('savedSlotsCountLabel');
+  const len = state.savedBuilds.length;
+  if (badge) badge.textContent = len;
+  if (countLabel) countLabel.textContent = `${len} сборок`;
+}
+
+function renderSavedBuildsList() {
+  const container = document.getElementById('savedBuildsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (state.savedBuilds.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 24px; text-align: center; color: #64748b; font-family: var(--font-mono); font-size: 0.85rem;">
+        У вас пока нет сохраненных сборок.<br>Настройте конфигурацию и нажмите «Сохранить слот».
+      </div>
+    `;
+    return;
+  }
+
+  state.savedBuilds.forEach(build => {
+    const card = document.createElement('div');
+    card.className = 'saved-build-card';
+
+    card.innerHTML = `
+      <div class="saved-build-meta">
+        <span class="saved-build-name">${build.name}</span>
+        <span class="saved-build-sub">${build.date} • ${formatRub(build.totalPrice)} • ~${build.totalWatts} Вт</span>
+      </div>
+      <div class="saved-build-actions">
+        <button class="btn-load-slot" data-id="${build.id}">Загрузить</button>
+        <button class="btn-delete-slot" data-id="${build.id}" title="Удалить слот">✕</button>
+      </div>
+    `;
+
+    card.querySelector('.btn-load-slot').addEventListener('click', () => loadBuildRecord(build.id));
+    card.querySelector('.btn-delete-slot').addEventListener('click', () => deleteBuildRecord(build.id));
+
+    container.appendChild(card);
+  });
+}
+
+// ==========================================================================
+// 8. PAGE NAVIGATION & MODAL MANAGEMENT
+// ==========================================================================
+function switchPage(pageId) {
+  document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-view').forEach(p => p.style.display = 'none');
+
+  const target = document.getElementById(pageId);
+  if (target) {
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
+
+  document.querySelectorAll('.nav-page-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === pageId);
+  });
+
+  if (pageId === 'pageConfigurator' && state.viewer3D) {
+    setTimeout(() => state.viewer3D.onWindowResize(), 50);
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  CyberSound.playSelect();
+}
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('open');
+    CyberSound.playSelect();
+  }
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.classList.remove('open');
+}
+
+// ==========================================================================
+// 9. STEP-BY-STEP REALISTIC ASSEMBLY
+// ==========================================================================
+function updateAssemblyStepUI() {
+  const step = ASSEMBLY_STEPS[state.assemblyStep];
+  if (!step) return;
+
+  const badgeElem = document.getElementById('assemblyStepBadge');
+  const titleElem = document.getElementById('assemblyStepTitle');
+  const descElem = document.getElementById('assemblyStepDesc');
+  const actionText = document.getElementById('assemblyActionText');
+
+  if (badgeElem) badgeElem.textContent = step.badge;
+  if (titleElem) titleElem.textContent = step.title;
+  if (descElem) descElem.textContent = step.desc;
+  if (actionText) actionText.textContent = step.actionText;
+}
+
+function executeAssemblyStep() {
+  const step = ASSEMBLY_STEPS[state.assemblyStep];
+  if (!step) return;
+
+  switch (step.part) {
+    case 'glass':
+      if (state.viewer3D) {
+        state.viewer3D.isGlassOpen = true;
+        state.viewer3D.updateGlassPosition(true);
+        const glassBtn = document.getElementById('toggleGlassBtn');
+        if (glassBtn) glassBtn.classList.add('open-active');
+      }
+      CyberSound.playSelect();
+      showToast('Боковое стекло снято! Доступ к стойкам открыт.');
+      advanceAssemblyStep();
+      break;
+
+    case 'motherboard':
+      CyberSound.playScrewSound();
+      if (state.viewer3D) {
+        state.viewer3D.animatePartDock('motherboard', true, () => {
+          showToast('Материнская плата прикручена на латунные стойки!');
+          advanceAssemblyStep();
+        });
+      } else advanceAssemblyStep();
+      break;
+
+    case 'cpu':
+      CyberSound.playRamClickSound();
+      if (state.viewer3D) {
+        state.viewer3D.animatePartDock('cpu', true, () => {
+          showToast('Процессор установлен в сокет, рычаг защёлкнут!');
+          advanceAssemblyStep();
+        });
+      } else advanceAssemblyStep();
+      break;
+
+    case 'thermalPaste':
+      CyberSound.playPasteSound();
+      if (state.viewer3D) {
+        state.viewer3D.applyThermalPaste(() => {
+          showToast('Термопаста нанесена по центру крышки CPU!');
+          advanceAssemblyStep();
+        });
+      } else advanceAssemblyStep();
+      break;
+
+    case 'cooler':
+      CyberSound.playScrewSound();
+      if (state.viewer3D) {
+        state.viewer3D.animatePartDock('cooler', true, () => {
+          showToast('Охлаждение смонтировано с равномерным прижимом!');
+          advanceAssemblyStep();
+        });
+      } else advanceAssemblyStep();
+      break;
+
+    case 'ram':
+      CyberSound.playRamClickSound();
+      if (state.viewer3D) {
+        state.viewer3D.animatePartDock('ram', true, () => {
+          showToast('Планки ОЗУ защёлкнуты в слоты A2/B2 Dual-Channel!');
+          advanceAssemblyStep();
+        });
+      } else advanceAssemblyStep();
+      break;
+
+    case 'gpu':
+      CyberSound.playRamClickSound();
+      if (state.viewer3D) {
+        state.viewer3D.animatePartDock('gpu', true, () => {
+          showToast('Видеокарта зафиксирована в PCIe x16, кабель питания подключен!');
+          advanceAssemblyStep();
+        });
+      } else advanceAssemblyStep();
+      break;
+
+    case 'boot':
+      if (state.viewer3D) {
+        state.viewer3D.isGlassOpen = false;
+        state.viewer3D.updateGlassPosition(false);
+        const glassBtn = document.getElementById('toggleGlassBtn');
+        if (glassBtn) glassBtn.classList.remove('open-active');
+      }
+      triggerPowerSequence();
+      break;
+  }
+}
+
+function advanceAssemblyStep() {
+  state.assemblyStep = (state.assemblyStep + 1) % ASSEMBLY_STEPS.length;
+  updateAssemblyStepUI();
+}
+
+function triggerPowerSequence() {
+  CyberSound.playRelayClick();
+  setTimeout(() => CyberSound.playBiosBeep(), 400);
+
+  if (state.viewer3D) {
+    state.viewer3D.togglePower(true);
+  }
+
+  const pBtn = document.getElementById('powerOnBtn');
+  if (pBtn) pBtn.classList.add('powered-on');
+  showToast('СИСТЕМА ЗАПУЩЕНА! POST CHECK OK [CODE 00]');
+}
+
+// ==========================================================================
+// 10. REACTIVE METRICS & UI SYNCHRONIZATION
+// ==========================================================================
+function updateUI() {
+  updatePriceDisplay();
+  updateCompatibility();
+  updatePowerMeter();
+  updateFpsMeter();
+  updateMiniSpecSummary();
+}
+
+function updatePriceDisplay() {
+  let total = 0;
+  Object.values(state.selected).forEach(comp => {
+    if (comp && comp.price) total += comp.price;
+  });
+
+  const priceElem = document.getElementById('totalPriceDisplay');
+  if (priceElem) {
+    priceElem.textContent = formatRub(total);
+  }
+}
+
+function calculateTotalPowerConsumption() {
+  const cpuTdp = state.selected.cpu ? state.selected.cpu.tdp : 65;
+  const gpuTdp = state.selected.gpu ? state.selected.gpu.tdp : 115;
+  return cpuTdp + gpuTdp + 80;
+}
+
+function updateCompatibility() {
+  const issues = [];
+  const warnings = [];
+
+  const cpu = state.selected.cpu;
+  const mb = state.selected.motherboard;
+  const ram = state.selected.ram;
+  const cooler = state.selected.cooler;
+  const psu = state.selected.psu;
+
+  if (cpu && mb && cpu.socket !== mb.socket) {
+    issues.push(`Несовместимый сокет: CPU (${cpu.socket}) ≠ Плата (${mb.socket})`);
+  }
+
+  if (ram && mb && ram.ramType !== mb.ramType) {
+    issues.push(`Несовместимая память: Плата (${mb.ramType}) ≠ ОЗУ (${ram.ramType})`);
+  }
+
+  if (cpu && cooler && cooler.maxTdp < cpu.tdp) {
+    warnings.push(`Кулер слабоват: ${cooler.maxTdp}W < CPU ${cpu.tdp}W`);
+  }
+
+  const watts = calculateTotalPowerConsumption();
+  if (psu) {
+    if (watts > psu.wattage) {
+      issues.push(`Дефицит мощности: ${watts}W > БП ${psu.wattage}W`);
+    } else if (watts > psu.wattage * 0.85) {
+      warnings.push(`БП загружен на 85%+ (${watts} / ${psu.wattage} Вт)`);
+    }
+  }
+
+  const badge = document.getElementById('compatBadge');
+  if (badge) {
+    badge.className = 'header-compat-badge';
+    if (issues.length > 0) {
+      badge.classList.add('compat-badge-warn');
+      badge.innerHTML = `<span class="compat-icon">⚠️</span> <span class="compat-text">${issues[0]}</span>`;
+    } else if (warnings.length > 0) {
+      badge.classList.add('compat-badge-warn');
+      badge.innerHTML = `<span class="compat-icon">⚠️</span> <span class="compat-text">${warnings[0]}</span>`;
+    } else {
+      badge.classList.add('compat-badge-ok');
+      badge.innerHTML = `<span class="compat-icon">✔</span> <span class="compat-text">Система совместима</span>`;
+    }
+  }
+}
+
+function updatePowerMeter() {
+  const usedWatts = calculateTotalPowerConsumption();
+  const psuWattage = state.selected.psu ? state.selected.psu.wattage : 750;
+
+  const usedElem = document.getElementById('powerUsedWatts');
+  const totalElem = document.getElementById('powerTotalWatts');
+  const barFill = document.getElementById('powerBarFill');
+  const statusLabel = document.getElementById('powerStatusLabel');
+  const percentLabel = document.getElementById('powerPercentLabel');
+
+  if (usedElem) usedElem.textContent = `${usedWatts}`;
+  if (totalElem) totalElem.textContent = `${psuWattage} Вт`;
+
+  const percent = Math.min(Math.round((usedWatts / psuWattage) * 100), 100);
+  if (barFill) {
+    barFill.style.width = `${percent}%`;
+    barFill.className = 'power-bar-fill';
+    if (percent > 90) barFill.classList.add('danger');
+    else if (percent > 75) barFill.classList.add('warning');
+  }
+
+  if (percentLabel) percentLabel.textContent = `${percent}% нагрузки`;
+  if (statusLabel) {
+    const margin = psuWattage - usedWatts;
+    statusLabel.textContent = margin > 0 ? `Запас мощности: +${margin} Вт` : `Дефицит: ${margin} Вт!`;
+    statusLabel.style.color = margin > 0 ? '#64748b' : 'var(--neon-red)';
+  }
+}
+
+function updateFpsMeter() {
+  const container = document.getElementById('fpsGamesContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const cpu = state.selected.cpu;
+  const gpu = state.selected.gpu;
+  const cpuScore = cpu ? cpu.score : 65;
+  const gpuMultiplier = gpu ? gpu.fpsMultiplier : 1.0;
+
+  let resMultiplier = 1.0;
+  if (state.activeResolution === '1440p') resMultiplier = 0.72;
+  if (state.activeResolution === '4k') resMultiplier = 0.44;
+
+  PC_DATA.games.forEach(game => {
+    const rawFps = (game.baseFps * (cpuScore / 75) * game.cpuWeight) + 
+                   (game.baseFps * gpuMultiplier * game.gpuWeight);
+    const finalFps = Math.max(25, Math.round(rawFps * resMultiplier));
+    const barWidthPercent = Math.min(100, Math.round((finalFps / 240) * 100));
+
+    let fpsColor = 'var(--neon-green)';
+    if (finalFps < 60) fpsColor = 'var(--neon-amber)';
+    if (finalFps >= 144) fpsColor = 'var(--neon-cyan)';
+
+    const item = document.createElement('div');
+    item.className = 'fps-game-item';
+    item.innerHTML = `
+      <div class="fps-game-info">
+        <div>
+          <div class="fps-game-name">${game.name}</div>
+        </div>
+        <div class="fps-number-badge" style="color: ${fpsColor};">
+          ~${finalFps} <span style="font-size: 0.68rem; color: #94a3b8;">FPS</span>
+        </div>
+      </div>
+      <div class="fps-bar-container">
+        <div class="fps-bar-indicator" style="width: ${barWidthPercent}%; background: ${fpsColor};"></div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function updateMiniSpecSummary() {
+  const container = document.getElementById('miniSpecList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  PC_DATA.categories.forEach(cat => {
+    const item = state.selected[cat.id];
+    const div = document.createElement('div');
+    div.className = 'mini-spec-item';
+    div.innerHTML = `
+      <span class="mini-spec-cat">${cat.name.split(' ')[0]}</span>
+      <span class="mini-spec-name" title="${item ? item.name : 'Не выбрано'}">${item ? item.name : '—'}</span>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ==========================================================================
+// 11. EVENT LISTENERS SETUP
+// ==========================================================================
+function setupEventListeners() {
+  // Brand Logo click -> Home
+  document.getElementById('brandNavHome')?.addEventListener('click', () => switchPage('pageConfigurator'));
+
+  // Main Page Navigation Tabs
+  document.getElementById('navTabBuilder')?.addEventListener('click', () => switchPage('pageConfigurator'));
+  document.getElementById('navTabCatalog')?.addEventListener('click', () => switchPage('pageCatalog'));
+  document.getElementById('navTabSaved')?.addEventListener('click', () => openModal('saveLoadModal'));
+  document.getElementById('backToBuilderBtn')?.addEventListener('click', () => switchPage('pageConfigurator'));
+  document.getElementById('btnOpenFullCatalog')?.addEventListener('click', () => switchPage('pageCatalog'));
+
+  // Rail Category Buttons
+  document.querySelectorAll('.rail-cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.cat;
+      setDrawerCategory(cat);
+    });
+  });
+
+  // Pin Drawer Toggle Buttons
+  const togglePin = () => {
+    state.isDrawerPinned = !state.isDrawerPinned;
+    const rail = document.getElementById('catalogDockRail');
+    const pinBtn = document.getElementById('pinDrawerBtn');
+    if (rail) rail.classList.toggle('is-pinned', state.isDrawerPinned);
+    if (pinBtn) pinBtn.classList.toggle('pinned', state.isDrawerPinned);
+    showToast(state.isDrawerPinned ? 'Каталог закреплен открытым' : 'Каталог скрывается при отведении курсора');
+  };
+  document.getElementById('pinDrawerBtn')?.addEventListener('click', togglePin);
+  document.getElementById('drawerPinToggle')?.addEventListener('click', togglePin);
+
+  // Drawer Search Input
+  const drawerInput = document.getElementById('drawerSearchInput');
+  const clearDrawerBtn = document.getElementById('clearDrawerSearch');
+  drawerInput?.addEventListener('input', (e) => {
+    state.drawerSearch = e.target.value;
+    if (clearDrawerBtn) clearDrawerBtn.style.display = state.drawerSearch ? 'block' : 'none';
+    renderDrawerItems();
+  });
+  clearDrawerBtn?.addEventListener('click', () => {
+    if (drawerInput) drawerInput.value = '';
+    state.drawerSearch = '';
+    clearDrawerBtn.style.display = 'none';
+    renderDrawerItems();
+  });
+
+  // Full Catalog Page Search Input
+  const catalogInput = document.getElementById('catalogFullSearchInput');
+  const clearCatalogBtn = document.getElementById('clearCatalogSearch');
+  catalogInput?.addEventListener('input', (e) => {
+    state.catalogSearch = e.target.value;
+    if (clearCatalogBtn) clearCatalogBtn.style.display = state.catalogSearch ? 'block' : 'none';
+    renderFullCatalog();
+  });
+  clearCatalogBtn?.addEventListener('click', () => {
+    if (catalogInput) catalogInput.value = '';
+    state.catalogSearch = '';
+    clearCatalogBtn.style.display = 'none';
+    renderFullCatalog();
+  });
+
+  // Full Catalog Category Tabs
+  document.querySelectorAll('.cat-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cat-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.catalogCat = btn.dataset.category;
+      renderFullCatalog();
+      CyberSound.playSelect();
+    });
+  });
+
+  // Full Catalog Sorting Selector
+  document.getElementById('catalogSortSelect')?.addEventListener('change', (e) => {
+    state.catalogSort = e.target.value;
+    renderFullCatalog();
+  });
+
+  // Studio White / Cyber Dark Light Theme Toggle
+  document.getElementById('toggleStudioThemeBtn')?.addEventListener('click', (e) => {
+    state.studioTheme = state.studioTheme === 'white' ? 'dark' : 'white';
+    const isWhite = state.studioTheme === 'white';
+
+    if (state.viewer3D) {
+      state.viewer3D.setStudioTheme(state.studioTheme);
+    }
+
+    const icon = document.getElementById('studioThemeIcon');
+    const label = document.getElementById('studioThemeLabel');
+    const wrapper = document.getElementById('canvas3dContainer');
+
+    if (icon) icon.textContent = isWhite ? '☀️' : '🌙';
+    if (label) label.textContent = isWhite ? 'Белая Студия' : 'Кибер Тьма';
+    if (wrapper) wrapper.style.background = isWhite ? '#f1f5f9' : '#07090f';
+
+    CyberSound.playSelect();
+    showToast(`Освещение: ${isWhite ? 'Светлая студия (Белый фон)' : 'Тёмный киберпанк'}`);
+  });
+
+  // 3D Controls
+  document.getElementById('toggleGlassBtn')?.addEventListener('click', () => {
+    if (state.viewer3D) {
+      const isOpen = !state.viewer3D.isGlassOpen;
+      state.viewer3D.isGlassOpen = isOpen;
+      state.viewer3D.updateGlassPosition(isOpen);
+      document.getElementById('toggleGlassBtn')?.classList.toggle('open-active', isOpen);
+      CyberSound.playSelect();
+      showToast(isOpen ? 'Боковое стекло снято' : 'Стекло установлено на корпус');
+    }
+  });
+
+  document.getElementById('applyPasteBtn')?.addEventListener('click', () => {
+    if (state.viewer3D) {
+      CyberSound.playPasteSound();
+      state.viewer3D.applyThermalPaste(() => {
+        showToast('Термопаста нанесена ровным слоем');
+      });
+    }
+  });
+
+  document.getElementById('powerOnBtn')?.addEventListener('click', () => {
+    if (state.viewer3D) {
+      const isPower = !state.viewer3D.isPoweredOn;
+      state.viewer3D.togglePower(isPower);
+      document.getElementById('powerOnBtn')?.classList.toggle('powered-on', isPower);
+      if (isPower) {
+        CyberSound.playRelayClick();
+        setTimeout(() => CyberSound.playBiosBeep(), 400);
+        showToast('ПК ВКЛЮЧЕН: Кулеры и RGB подсветка активны');
+      } else {
+        CyberSound.playRelayClick();
+        showToast('ПК ВЫКЛЮЧЕН');
+      }
+    }
+  });
+
+  document.getElementById('toggleRotateBtn')?.addEventListener('click', (e) => {
+    if (state.viewer3D) {
+      const isRot = !state.viewer3D.isAutoRotate;
+      state.viewer3D.toggleAutoRotate(isRot);
+      e.currentTarget.classList.toggle('active', isRot);
+      showToast(isRot ? 'Круговое вращение: ВКЛ' : 'Вращение: ВЫКЛ');
+    }
+  });
+
+  document.getElementById('cameraSelect')?.addEventListener('change', (e) => {
+    if (state.viewer3D) {
+      state.viewer3D.setCameraView(e.target.value);
+      CyberSound.playSelect();
+    }
+  });
+
+  // Fullscreen 3D Stage
+  const toggleFullscreen = (forceExit = false) => {
+    const stage = document.getElementById('hero3dStage');
+    if (!stage) return;
+    const isFull = stage.classList.contains('fullscreen-active');
+
+    if (!isFull && !forceExit) {
+      stage.classList.add('fullscreen-active');
+      if (stage.requestFullscreen) stage.requestFullscreen().catch(() => {});
+      showToast('Полноэкранный 3D режим [ESC для выхода]');
+    } else {
+      stage.classList.remove('fullscreen-active');
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    if (state.viewer3D) {
+      setTimeout(() => state.viewer3D.onWindowResize(), 80);
+    }
+  };
+
+  document.getElementById('toggleFullscreenBtn')?.addEventListener('click', () => toggleFullscreen());
+  document.getElementById('exitFullscreenBtn')?.addEventListener('click', () => toggleFullscreen(true));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const stage = document.getElementById('hero3dStage');
+      if (stage && stage.classList.contains('fullscreen-active')) toggleFullscreen(true);
+    }
+  });
+
+  // Assembly Step Action Button
+  document.getElementById('assemblyStepActionBtn')?.addEventListener('click', executeAssemblyStep);
+
+  // RGB Swatches
+  document.querySelectorAll('.rgb-color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.rgb-color-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const color = btn.dataset.color;
+      state.activeRgbTheme = color;
+      document.documentElement.setAttribute('data-rgb', color);
+      if (state.viewer3D) state.viewer3D.setRgbTheme(color);
+      CyberSound.playSelect();
+      showToast(`RGB подсветка: ${getRussianColorName(color)}`);
+    });
+  });
+
+  // Resolution pills
+  document.querySelectorAll('.res-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.res-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.activeResolution = btn.dataset.res;
+      CyberSound.playSelect();
+      updateFpsMeter();
+    });
+  });
+
+  // Sound FX Toggle
+  document.getElementById('soundToggleBtn')?.addEventListener('click', (e) => {
+    state.soundEnabled = !state.soundEnabled;
+    e.currentTarget.classList.toggle('active', state.soundEnabled);
+    if (state.soundEnabled) CyberSound.playSelect();
+    showToast(`Звуковые эффекты: ${state.soundEnabled ? 'ВКЛ' : 'ВЫКЛ'}`);
+  });
+
+  // Presets
+  document.getElementById('presetBudgetBtn')?.addEventListener('click', () => applyPreset(PC_DATA.presets.budget));
+  document.getElementById('presetOptimalBtn')?.addEventListener('click', () => applyPreset(PC_DATA.presets.optimal));
+  document.getElementById('presetPrestigeBtn')?.addEventListener('click', () => applyPreset(PC_DATA.presets.prestige));
+
+  // Reset build from scratch ("С чистого листа / Собрать самому")
+  document.getElementById('resetBuildBtn')?.addEventListener('click', () => {
+    CyberSound.playWarning();
+    Object.keys(state.selected).forEach(k => {
+      state.selected[k] = null;
+    });
+    // Set minimal default case so 3D isn't completely empty
+    state.selected.case = PC_DATA.components.case[0];
+
+    sync3DWithState();
+    updateUI();
+    renderDrawerItems();
+    renderFullCatalog();
+    state.assemblyStep = 0;
+    updateAssemblyStepUI();
+    showToast('Сборка очищена! Добавляйте нужные вам компоненты из каталога.');
+  });
+
+  // Save / Load Modal Triggers
+  document.getElementById('openSaveModalBtn')?.addEventListener('click', () => openModal('saveLoadModal'));
+  document.getElementById('quickSaveBtn')?.addEventListener('click', () => openModal('saveLoadModal'));
+
+  document.getElementById('saveBuildCommitBtn')?.addEventListener('click', () => {
+    const input = document.getElementById('saveBuildNameInput');
+    if (input) {
+      saveBuildToStorage(input.value);
+      input.value = '';
+    }
+  });
+
+  // Export JSON file
+  document.getElementById('exportJsonBuildBtn')?.addEventListener('click', () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.selected, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", `pc_build_${Date.now()}.json`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast('Файл сборки экспортирован!');
+  });
+
+  // Import JSON file
+  document.getElementById('importJsonFileInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        Object.keys(state.selected).forEach(k => {
+          state.selected[k] = parsed[k] || null;
+        });
+        sync3DWithState();
+        updateUI();
+        renderDrawerItems();
+        renderFullCatalog();
+        closeModal('saveLoadModal');
+        showToast('Сборка успешно загружена из файла JSON!');
+      } catch (err) {
+        showToast('Ошибка при чтении файла JSON!');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // Passport / Export Modal
+  document.getElementById('exportModalBtn')?.addEventListener('click', () => {
+    const codeBlock = document.getElementById('exportTextContent');
+    if (codeBlock) codeBlock.textContent = generateBuildSummaryText();
+    openModal('exportModal');
+  });
+
+  document.getElementById('copyModalTextBtn')?.addEventListener('click', () => {
+    const text = generateBuildSummaryText();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => showToast('Паспорт сборки скопирован!'));
+    }
+  });
+
+  document.getElementById('copySummaryBtn')?.addEventListener('click', () => {
+    const text = generateBuildSummaryText();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => showToast('Список комплектующих скопирован!'));
+    }
+  });
+
+  document.getElementById('printBuildBtn')?.addEventListener('click', () => window.print());
+
+  // Modal Close buttons
+  document.querySelectorAll('[data-close-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const modalId = btn.dataset.closeModal;
+      closeModal(modalId);
+    });
+  });
+
+  document.querySelectorAll('.cyber-modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) backdrop.classList.remove('open');
+    });
+  });
+}
+
+function applyPreset(preset) {
+  CyberSound.playPreset();
+  initPresets(preset);
+  sync3DWithState();
+  updateUI();
+  renderDrawerItems();
+  renderFullCatalog();
+  showToast(`Загружен пресет: ${preset.name}`);
+}
+
+function generateBuildSummaryText() {
+  let total = 0;
+  Object.values(state.selected).forEach(comp => {
+    if (comp && comp.price) total += comp.price;
+  });
+
+  const watts = calculateTotalPowerConsumption();
+  const dateStr = new Date().toLocaleDateString('ru-RU');
+
+  let text = `========================================================\n`;
+  text += `CYBER-LAB CUSTOM PC — СПЕЦИФИКАЦИЯ СБОРКИ\n`;
+  text += `Дата сборки: ${dateStr}\n`;
+  text += `========================================================\n\n`;
+
+  PC_DATA.categories.forEach(cat => {
+    const item = state.selected[cat.id];
+    if (item) {
+      text += `[${cat.name.toUpperCase()}]:\n`;
+      text += `  • ${item.name}\n`;
+      text += `  • Стоимость: ${formatRub(item.price)}\n\n`;
+    }
+  });
+
+  text += `--------------------------------------------------------\n`;
+  text += `ЭНЕРГОПОТРЕБЛЕНИЕ СИСТЕМЫ: ~${watts} Вт (TDP)\n`;
+  text += `ИТОГОВАЯ СТОИМОСТЬ: ${formatRub(total)}\n`;
+  text += `========================================================\n`;
+  return text;
+}
+
+let toastTimeout;
+function showToast(msg) {
+  const toast = document.getElementById('cyberToast');
+  const toastMsg = document.getElementById('toastMsg');
+  if (!toast || !toastMsg) return;
+
+  clearTimeout(toastTimeout);
+  toastMsg.textContent = msg;
+  toast.classList.add('show');
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function formatRub(val) {
+  return (val || 0).toLocaleString('ru-RU') + ' ₽';
+}
+
+function getRussianColorName(color) {
+  switch (color) {
+    case 'cyan': return 'Неоновый Циан';
+    case 'purple': return 'Неоновый Пурпур';
+    case 'green': return 'Матричный Зеленый';
+    case 'red': return 'Кибер Красный';
+    case 'rainbow': return 'Радужная Аура';
+    default: return color;
+  }
+}

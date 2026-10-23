@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ru" data-rgb="cyan">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber-Lab Custom PC — 3D Конфигуратор Сборки ПК</title>
+  <meta name="description" content="Интерактивный 3D-конфигуратор сборки ПК с реалистичной студийной визуализацией, уникальными корпусами, каталогом комплектующих и сохранением собственных сборок.">
+  
+  <!-- Cyberpunk Fonts: Orbitron, Rajdhani, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="studio-light-mode">
+
+  <!-- ========================================================================
+       STICKY HEADER & MAIN NAVIGATION TABS
+       ======================================================================== -->
+  <header class="cyber-header">
+    <div class="header-container">
+      
+      <!-- Brand Logo -->
+      <div class="brand-section" id="brandNavHome" title="На главный экран 3D">
+        <div class="brand-logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <rect x="9" y="9" width="6" height="6" />
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
+          </svg>
+        </div>
+        <div class="brand-title">
+          CYBER-LAB
+          <span class="brand-subtitle">Custom PC Studio</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Tabs: 3D Builder vs Catalog Page vs Saved Builds -->
+      <nav class="nav-page-tabs">
+        <button id="navTabBuilder" class="nav-page-btn active" data-page="pageConfigurator">
+          <span class="nav-tab-icon">🖥️</span>
+          <span>3D Компьютер</span>
+        </button>
+        <button id="navTabCatalog" class="nav-page-btn" data-page="pageCatalog">
+          <span class="nav-tab-icon">📦</span>
+          <span>Каталог Деталей</span>
+          <span class="nav-badge-count" id="navCatalogCount">42</span>
+        </button>
+        <button id="navTabSaved" class="nav-page-btn" data-modal="saveLoadModal">
+          <span class="nav-tab-icon">💾</span>
+          <span>Мои Сборки</span>
+          <span class="nav-badge-count" id="navSavedCount">0</span>
+        </button>
+      </nav>
+
+      <!-- Live Compatibility, Price & Audio Toggle -->
+      <div class="header-stats">
+        <!-- Live Compatibility Status Badge -->
+        <div id="compatBadge" class="header-compat-badge compat-badge-ok" title="Кликните для детального отчета совместимости">
+          <span class="compat-icon">✔</span>
+          <span class="compat-text">Система совместима</span>
+        </div>
+
+        <!-- Real-Time Price Display -->
+        <div class="header-price-block" title="Итоговая сумма компонентов">
+          <span class="header-price-label">Итого:</span>
+          <span id="totalPriceDisplay" class="header-price-value">0 ₽</span>
+        </div>
+
+        <!-- Header Actions: Sound FX & Save -->
+        <div class="header-actions">
+          <button id="quickSaveBtn" class="btn-cyber btn-save-quick" title="Сохранить сборку в память">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span>Сохранить</span>
+          </button>
+
+          <button id="soundToggleBtn" class="btn-icon-hud" title="Звуковые кибер-эффекты интерфейса" aria-label="Включить звук">
+            <svg id="soundIconOn" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       PAGE 1: MAIN HERO 3D PC CONFIGURATOR VIEW
+       ======================================================================== -->
+  <main id="pageConfigurator" class="page-view active">
+    
+    <!-- Hero Builder Stage -->
+    <div class="hero-builder-layout">
+
+      <!-- ====================================================================
+           LEFT DOCK: SLIDE-OUT CATALOG ON HOVER / PIN
+           ==================================================================== -->
+      <aside class="catalog-dock-rail" id="catalogDockRail" title="Наведите для быстрого выбора комплектующих">
+        
+        <!-- Minimized Vertical Rail Icons -->
+        <div class="dock-rail-bar">
+          <div class="dock-rail-header" title="Каталог быстрого выбора">
+            <span class="dock-rail-icon">⚡</span>
+            <span class="dock-rail-label">ДЕТАЛИ</span>
+          </div>
+
+          <div class="dock-rail-nav">
+            <button class="rail-cat-btn active" data-cat="case" title="Корпус ПК">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <span>Корпус</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="cpu" title="Процессор">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+              <span>CPU</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="cooler" title="Кулер / СВО">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m14.3 12.3 4.2-4.2a2 2 0 1 0-2.8-2.8l-4.2 4.2"/><path d="m12.3 9.7-4.2-4.2a2 2 0 1 0-2.8 2.8l4.2 4.2"/><path d="m9.7 11.7-4.2 4.2a2 2 0 1 0 2.8 2.8l4.2-4.2"/><path d="m11.7 14.3 4.2 4.2a2 2 0 1 0 2.8-2.8l-4.2-4.2"/></svg>
+              <span>Кулер</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="motherboard" title="Материнская плата">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M11 9h4a2 2 0 0 0 2-2V3"/><circle cx="9" cy="9" r="2"/><path d="M7 21v-4a2 2 0 0 1 2-2h4"/><circle cx="15" cy="15" r="2"/></svg>
+              <span>Плата</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="ram" title="Оперативная память">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M6 5v3M10 5v3M14 5v3M18 5v3"/><rect x="2" y="8" width="20" height="8" rx="2"/></svg>
+              <span>RAM</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="gpu" title="Видеокарта">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/><path d="M2 10h2M2 14h2"/></svg>
+              <span>GPU</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="storage" title="Накопитель SSD">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>
+              <span>SSD</span>
+            </button>
+            <button class="rail-cat-btn" data-cat="psu" title="Блок питания">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>БП</span>
+            </button>
+          </div>
+
+          <div class="dock-rail-footer" id="pinDrawerBtn" title="Закрепить панель открытой">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="17" x2="12" y2="22"></line>
+              <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A4 4 0 0 1 14 9V4h1a1 1 0 0 0 1-1V2H8v1a1 1 0 0 0 1 1h1v5a4 4 0 0 1-2.11 3.56l-1.78.89A2 2 0 0 0 5 15.24Z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Flyout Content Drawer (Expands on Hover or Pin) -->
+        <div class="catalog-drawer-flyout" id="catalogDrawerFlyout">
+          
+          <!-- Drawer Header with Search & Pin Toggle -->
+          <div class="drawer-header">
+            <div class="drawer-header-title">
+              <span id="drawerCatTitle">ВЫБОР КОРПУСА</span>
+              <button id="drawerPinToggle" class="btn-icon-subtle" title="Закрепить панель (Pin)">📌</button>
+            </div>
+            
+            <!-- Quick Live Search in Drawer -->
+            <div class="drawer-search-wrap">
+              <svg class="search-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="drawerSearchInput" class="drawer-search-input" placeholder="Быстрый поиск деталей (RTX, White, Wood...)" autocomplete="off">
+              <button id="clearDrawerSearch" class="btn-clear-search" style="display:none;">✕</button>
+            </div>
+          </div>
+
+          <!-- Quick Category Filter Chips -->
+          <div class="drawer-cat-chips" id="drawerCatChips">
+            <!-- Rendered by script.js -->
+          </div>
+
+          <!-- Items Scroll List -->
+          <div class="drawer-items-list" id="drawerItemsList">
+            <!-- Populated dynamically via script.js -->
+          </div>
+
+          <!-- Link to Full Catalog Page -->
+          <div class="drawer-footer-link">
+            <button id="btnOpenFullCatalog" class="btn-full-catalog-link">
+              <span>Открыть полный каталог со всеми характеристиками</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- ====================================================================
+           CENTER: HERO 3D PC STAGE & INTERACTIVE WORKBENCH
+           ==================================================================== -->
+      <section class="hero-3d-stage" id="hero3dStage">
+        
+        <!-- Top 3D Interactive Workbench HUD Toolbar -->
+        <div class="viewer-3d-toolbar" id="viewer3dToolbar">
+          
+          <div class="toolbar-group-left">
+            <!-- Studio White / Cyber Dark Light Mode Toggle -->
+            <button id="toggleStudioThemeBtn" class="btn-hud-3d btn-hud-theme active" title="Переключить фон: Светлая Студия / Темный Киберпанк">
+              <span id="studioThemeIcon">☀️</span>
+              <span id="studioThemeLabel">Белая Студия</span>
+            </button>
+
+            <!-- Open / Remove Glass Side Panel -->
+            <button id="toggleGlassBtn" class="btn-hud-3d btn-hud-glass" title="Снять или открыть боковое стекло для доступа внутрь">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M9 3v18" />
+              </svg>
+              <span>Снять стекло</span>
+            </button>
+
+            <!-- Apply Thermal Paste Action -->
+            <button id="applyPasteBtn" class="btn-hud-3d" title="Нанести каплю термопасты на процессор">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m14 2 8 8-4 4-8-8 4-4Z" />
+                <path d="m4 16-2 6 6-2 10-10-4-4L4 16Z" />
+              </svg>
+              <span>Термопаста</span>
+            </button>
+
+            <!-- Physical Power Button with glowing status LED -->
+            <button id="powerOnBtn" class="btn-hud-3d btn-hud-power powered-on" title="Включить / Выключить ПК">
+              <span class="power-indicator-dot"></span>
+              <span>POWER ON</span>
+            </button>
+          </div>
+
+          <!-- Center RGB Color Swatches -->
+          <div class="rgb-controller" title="Смена режима подсветки RGB">
+            <button class="rgb-color-btn rgb-btn-cyan active" data-color="cyan" title="Неоновый Циан"></button>
+            <button class="rgb-color-btn rgb-btn-purple" data-color="purple" title="Неоновый Пурпур"></button>
+            <button class="rgb-color-btn rgb-btn-green" data-color="green" title="Матричный Зеленый"></button>
+            <button class="rgb-color-btn rgb-btn-red" data-color="red" title="Кибер Красный"></button>
+            <button class="rgb-color-btn rgb-btn-rainbow" data-color="rainbow" title="Радужная Аура RGB"></button>
+          </div>
+
+          <div class="toolbar-group-right">
+            <!-- 360 Auto-Rotate -->
+            <button id="toggleRotateBtn" class="btn-hud-3d" title="Автоматическое круговое вращение">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+              <span>360°</span>
+            </button>
+
+            <!-- Camera View Angle Selector -->
+            <select id="cameraSelect" class="camera-select-hud" title="Ракурс камеры">
+              <option value="iso">📷 Изометрия</option>
+              <option value="interior">🔍 Интерьер (Сбоку)</option>
+              <option value="workbench">🛠️ Верстак</option>
+              <option value="front">💨 Фронт (Кулеры)</option>
+              <option value="top">🔝 Сверху (СВО)</option>
+            </select>
+
+            <!-- Fullscreen Toggle -->
+            <button id="toggleFullscreenBtn" class="btn-hud-3d" title="Развернуть 3D витрину на весь экран">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+              </svg>
+              <span>На весь экран</span>
+            </button>
+
+            <!-- Exit Fullscreen Button (shown in fullscreen) -->
+            <button id="exitFullscreenBtn" class="fullscreen-exit-btn" title="Выйти из полноэкранного режима [ESC]">
+              ✕ Выйти [ESC]
+            </button>
+          </div>
+
+        </div>
+
+        <!-- 3D Canvas Viewport (Bright Studio Background) -->
+        <div class="canvas-3d-wrapper" id="canvas3dContainer">
+          <div class="view-3d-hint">🖱️ ЛКМ: вращение 360° | Колесико: зум | ПКМ: панорама | Клик: взаимодействие</div>
+          
+          <!-- Floating Selected Case Badge in 3D -->
+          <div class="floating-case-badge" id="floatingCaseBadge">
+            <span class="badge-icon">🏛️</span>
+            <span class="badge-name" id="floatingCaseName">Fractal North Walnut</span>
+          </div>
+        </div>
+
+        <!-- Realistic Assembly Step Workflow Banner -->
+        <div class="assembly-step-card" id="assemblyStepCard">
+          <div class="assembly-step-info">
+            <div class="assembly-step-badge" id="assemblyStepBadge">ШАГ 1 ИЗ 8</div>
+            <div class="assembly-step-title" id="assemblyStepTitle">Подготовка шасси: Снять стекло</div>
+            <div class="assembly-step-desc" id="assemblyStepDesc">Откройте или снимите боковую панель для доступа к внутренностям корпуса.</div>
+          </div>
+          <div class="assembly-step-actions">
+            <button id="assemblyStepActionBtn" class="btn-assembly-action">
+              <span id="assemblyActionText">Снять стекло</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Presets & Start Scratch Bar -->
+        <div class="hero-bottom-actions">
+          <div class="presets-quick-cluster">
+            <span class="cluster-label">Быстрый старт:</span>
+            <button id="presetBudgetBtn" class="btn-cyber btn-preset-budget" title="Собрать сбалансированный бюджетный ПК">
+              ⚡ Эконом
+            </button>
+            <button id="presetOptimalBtn" class="btn-cyber btn-preset-optimal" title="Cyber-Оптимал RTX 4070">
+              💎 Оптимал
+            </button>
+            <button id="presetPrestigeBtn" class="btn-cyber btn-preset-prestige" title="Флагманский Prestige">
+              👑 Prestige
+            </button>
+            <button id="resetBuildBtn" class="btn-cyber btn-preset-reset" title="Очистить и собрать самому с нуля">
+              🔄 С чистого листа
+            </button>
+          </div>
+
+          <div class="build-save-cluster">
+            <button id="openSaveModalBtn" class="btn-cyber btn-action-save" title="Сохранить текущую сборку в слот">
+              💾 Сохранить в слот
+            </button>
+            <button id="exportModalBtn" class="btn-cyber btn-action-passport" title="Открыть паспорт сборки и спецификацию">
+              📄 Паспорт сборки
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           RIGHT COLUMN: TELEMETRY, POWER & FPS PREVIEW
+           ==================================================================== -->
+      <aside class="telemetry-column" id="telemetryColumn">
+        
+        <!-- 1. Power Consumption Meter -->
+        <div class="telemetry-card power-card">
+          <div class="card-title-row">
+            <div class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              <span>Потребление питания</span>
+            </div>
+            <div class="power-ratio">
+              <span id="powerUsedWatts" class="used">350</span> / <span id="powerTotalWatts" class="total">750 Вт</span>
+            </div>
+          </div>
+
+          <div class="power-bar-track">
+            <div id="powerBarFill" class="power-bar-fill" style="width: 46%;"></div>
+          </div>
+
+          <div class="power-footer-meta">
+            <span id="powerStatusLabel">Запас мощности: 400 Вт</span>
+            <span id="powerPercentLabel">46% нагрузки</span>
+          </div>
+        </div>
+
+        <!-- 2. FPS Gaming Forecast -->
+        <div class="telemetry-card fps-card">
+          <div class="card-title-row">
+            <div class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              <span>Прогноз FPS в играх</span>
+            </div>
+
+            <!-- Resolution Switcher -->
+            <div class="res-selector">
+              <button class="res-btn active" data-res="1080p">1080p</button>
+              <button class="res-btn" data-res="1440p">2K</button>
+              <button class="res-btn" data-res="4k">4K</button>
+            </div>
+          </div>
+
+          <div class="fps-games-list" id="fpsGamesContainer">
+            <!-- Populated dynamically via script.js -->
+          </div>
+        </div>
+
+        <!-- 3. Hardware Spec Mini Summary -->
+        <div class="telemetry-card summary-card">
+          <div class="card-title-row">
+            <div class="card-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span>Текущие узлы</span>
+            </div>
+            <button id="copySummaryBtn" class="btn-micro-action" title="Скопировать список">Копировать</button>
+          </div>
+
+          <div class="mini-spec-list" id="miniSpecList">
+            <!-- Populated by script.js -->
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================
+       PAGE 2: DEDICATED FULL COMPONENT CATALOG PAGE
+       ======================================================================== -->
+  <section id="pageCatalog" class="page-view" style="display: none;">
+    <div class="catalog-page-container">
+      
+      <!-- Catalog Page Header -->
+      <div class="catalog-page-header">
+        <div class="catalog-header-text">
+          <h1 class="catalog-main-title">📦 Полный Каталог Комплектующих</h1>
+          <p class="catalog-main-subtitle">
+            Выберите любые детали для сборки, сравнивайте характеристики и добавляйте их прямо в 3D компьютер одним кликом.
+          </p>
+        </div>
+
+        <button id="backToBuilderBtn" class="btn-cyber btn-preset-optimal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Вернуться в 3D Конфигуратор</span>
+        </button>
+      </div>
+
+      <!-- Search & Filters Toolbar -->
+      <div class="catalog-filter-bar">
+        
+        <!-- Large Search Bar -->
+        <div class="catalog-search-box">
+          <svg class="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="catalogFullSearchInput" class="catalog-search-input" placeholder="Поиск по названию, сокету, чипсету, бренду (напр: RTX 4080, AM5, Fractal, DDR5)..." autocomplete="off">
+          <button id="clearCatalogSearch" class="btn-clear-search" style="display:none;">✕</button>
+        </div>
+
+        <!-- Sorting Selector -->
+        <div class="catalog-sort-wrap">
+          <label for="catalogSortSelect" class="sort-label">Сортировка:</label>
+          <select id="catalogSortSelect" class="cyber-select">
+            <option value="default">По умолчанию</option>
+            <option value="price-asc">Сначала дешевле</option>
+            <option value="price-desc">Сначала дороже</option>
+            <option value="power-desc">По мощности (TDP / Вт)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="catalog-category-tabs" id="catalogCategoryTabs">
+        <button class="cat-tab-btn active" data-category="all">
+          <span class="tab-emoji">✨</span>
+          <span>Все категории</span>
+        </button>
+        <button class="cat-tab-btn" data-category="case">
+          <span class="tab-emoji">🏛️</span>
+          <span>Корпусы</span>
+        </button>
+        <button class="cat-tab-btn" data-category="cpu">
+          <span class="tab-emoji">🧠</span>
+          <span>Процессоры</span>
+        </button>
+        <button class="cat-tab-btn" data-category="cooler">
+          <span class="tab-emoji">❄️</span>
+          <span>Охлаждение</span>
+        </button>
+        <button class="cat-tab-btn" data-category="motherboard">
+          <span class="tab-emoji">🔌</span>
+          <span>Материнские платы</span>
+        </button>
+        <button class="cat-tab-btn" data-category="ram">
+          <span class="tab-emoji">⚡</span>
+          <span>Оперативная память</span>
+        </button>
+        <button class="cat-tab-btn" data-category="gpu">
+          <span class="tab-emoji">🎮</span>
+          <span>Видеокарты</span>
+        </button>
+        <button class="cat-tab-btn" data-category="storage">
+          <span class="tab-emoji">💾</span>
+          <span>Накопители SSD</span>
+        </button>
+        <button class="cat-tab-btn" data-category="psu">
+          <span class="tab-emoji">🔋</span>
+          <span>Блоки питания</span>
+        </button>
+      </div>
+
+      <!-- Results Meta Counter -->
+      <div class="catalog-results-meta">
+        <span id="catalogResultsCount">Показано: 42 комплектующих</span>
+        <span class="meta-hint">Кликните «Вставить в сборку» для мгновенного монтажа в 3D компьютер</span>
+      </div>
+
+      <!-- Main Responsive Product Grid -->
+      <div class="catalog-grid" id="catalogGridContainer">
+        <!-- Rendered dynamically by script.js -->
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       MODAL: SAVE & LOAD BUILDS SYSTEM (Local Storage)
+       ======================================================================== -->
+  <div id="saveLoadModal" class="cyber-modal-backdrop">
+    <div class="cyber-modal-box save-modal-box">
+      
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          Менеджер Сборок ПК
+        </div>
+        <button class="modal-close-btn" data-close-modal="saveLoadModal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Save Current Build Form -->
+        <div class="save-build-section">
+          <label class="section-label">Сохранить текущую конфигурацию:</label>
+          <div class="save-input-row">
+            <input type="text" id="saveBuildNameInput" class="cyber-input" placeholder="Введите название сборки (напр: Мой Стримерский ПК 2026)">
+            <button id="saveBuildCommitBtn" class="btn-cyber btn-preset-optimal">
+              💾 Сохранить слот
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Builds Slots List -->
+        <div class="saved-slots-section">
+          <div class="slots-header-row">
+            <span class="section-label">Ваши сохраненные сборки:</span>
+            <span id="savedSlotsCountLabel" class="slots-count-badge">0 сборок</span>
+          </div>
+
+          <div class="saved-builds-list" id="savedBuildsList">
+            <!-- Dynamically populated from localStorage -->
+          </div>
+        </div>
+
+        <!-- JSON Export / Import utility -->
+        <div class="save-import-export-row">
+          <button id="exportJsonBuildBtn" class="btn-cyber btn-micro" title="Скачать файл сборки">
+            📥 Экспорт в JSON
+          </button>
+          <label class="btn-cyber btn-micro file-upload-label" title="Загрузить из файла JSON">
+            📤 Импорт из JSON
+            <input type="file" id="importJsonFileInput" accept=".json" style="display:none;">
+          </label>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cyber" data-close-modal="saveLoadModal">Закрыть</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: CONFIGURATION EXPORT & DETAILED SPEC SHEET
+       ======================================================================== -->
+  <div id="exportModal" class="cyber-modal-backdrop">
+    <div class="cyber-modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          Паспорт сборки Cyber-Lab
+        </div>
+        <button class="modal-close-btn" data-close-modal="exportModal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="color: #94a3b8; font-size: 0.88rem;">
+          Готовая спецификация сборки с рассчитанной стоимостью, потреблением энергии и прогнозом FPS. Вы можете скопировать или распечатать её.
+        </p>
+
+        <div id="exportTextContent" class="export-code-block">
+          <!-- Populated by script.js -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="copyModalTextBtn" class="btn-cyber btn-preset-optimal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Скопировать в буфер
+        </button>
+        <button id="printBuildBtn" class="btn-cyber">
+          🖨️ Печать / PDF
+        </button>
+        <button class="btn-cyber" data-close-modal="exportModal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: VIRTUAL UEFI BIOS / POST MONITOR SCREEN
+       ======================================================================== -->
+  <div id="biosModal" class="bios-modal-backdrop">
+    <div class="bios-screen-monitor">
+      <div class="bios-header-brand">
+        <div class="bios-title">CYBER-LAB CUSTOM UEFI BIOS v2.4</div>
+        <div style="font-size: 0.75rem; color: #64748b;">POST CODE: 00 [NORMAL]</div>
+      </div>
+
+      <div class="bios-post-log" id="biosLogContainer">
+        <!-- Log lines dynamically filled on boot -->
+      </div>
+
+      <div class="bios-footer">
+        <div class="bios-key-hints">
+          Нажмите ESC или кнопку, чтобы продолжить работу
+        </div>
+        <button id="biosCloseBtn" class="btn-cyber btn-preset-optimal">
+          Войти в систему (POST OK)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CYBER TOAST NOTIFICATION -->
+  <div id="cyberToast" class="cyber-toast">
+    <span class="toast-icon">⚡</span>
+    <span id="toastMsg" class="toast-msg">Конфигурация обновлена</span>
+  </div>
+
+  <!-- 3D WebGL Engine & Libraries -->
+  <script src="three.min.js"></script>
+  <script src="OrbitControls.js"></script>
+  <script src="pc3d.js"></script>
+
+  <!-- Application Logic & Hardware DB -->
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

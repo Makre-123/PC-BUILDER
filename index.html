@@ -33,7 +33,7 @@
         </div>
         <div class="brand-title">
           CYBER-LAB
-          <span class="brand-subtitle">Custom PC Studio</span>
+          <span class="brand-subtitle" id="txtBrandSub">Maxsus Kompyuter Studiyasi</span>
         </div>
       </div>
 
@@ -41,16 +41,16 @@
       <nav class="nav-page-tabs">
         <button id="navTabBuilder" class="nav-page-btn active" data-page="pageConfigurator">
           <span class="nav-tab-icon">🖥️</span>
-          <span>3D Компьютер</span>
+          <span id="txtNavBuilder">3D Kompyuter</span>
         </button>
         <button id="navTabCatalog" class="nav-page-btn" data-page="pageCatalog">
           <span class="nav-tab-icon">📦</span>
-          <span>Каталог Деталей</span>
+          <span id="txtNavCatalog">Qismlar Katalogi</span>
           <span class="nav-badge-count" id="navCatalogCount">42</span>
         </button>
         <button id="navTabSaved" class="nav-page-btn" data-modal="saveLoadModal">
           <span class="nav-tab-icon">💾</span>
-          <span>Мои Сборки</span>
+          <span id="txtNavSaved">Mening Terilmalarim</span>
           <span class="nav-badge-count" id="navSavedCount">0</span>
         </button>
       </nav>
@@ -58,33 +58,35 @@
       <!-- Live Compatibility, Price & Audio Toggle -->
       <div class="header-stats">
         <!-- Live Compatibility Status Badge -->
-        <div id="compatBadge" class="header-compat-badge compat-badge-ok" title="Кликните для детального отчета совместимости">
+        <div id="compatBadge" class="header-compat-badge compat-badge-ok" title="Moslik hisoboti">
           <span class="compat-icon">✔</span>
-          <span class="compat-text">Система совместима</span>
+          <span class="compat-text" id="txtCompat">Tizim to‘liq mos keladi</span>
         </div>
 
-        <!-- Real-Time Price Display -->
-        <div class="header-price-block" title="Итоговая сумма компонентов">
-          <span class="header-price-label">Итого:</span>
-          <span id="totalPriceDisplay" class="header-price-value">0 ₽</span>
+        <!-- Frameless Real-Time Price Display + Currency Switcher (UZS / USD / RUB) -->
+        <div class="header-price-wrapper">
+          <div class="header-price-block" title="Qismlarning umumiy qiymati / Стоимость сборки">
+            <span class="header-price-label" id="txtTotalLabel">Jami:</span>
+            <span id="totalPriceDisplay" class="header-price-value">0 so'm</span>
+          </div>
+
+          <!-- Currency Selector: UZS (so'm), USD ($), RUB (₽) -->
+          <div class="currency-selector" id="currencySwitcher" title="Valyutani tanlash / Выбор валюты / Currency">
+            <button type="button" class="btn-curr active" data-curr="uzs" title="O'zbek so'mi (so'm)">UZS</button>
+            <button type="button" class="btn-curr" data-curr="usd" title="US Dollar ($)">USD</button>
+            <button type="button" class="btn-curr" data-curr="rub" title="Российский рубль (₽)">RUB</button>
+          </div>
         </div>
 
-        <!-- Header Actions: Sound FX & Save -->
+        <!-- Header Actions: Quick Save -->
         <div class="header-actions">
-          <button id="quickSaveBtn" class="btn-cyber btn-save-quick" title="Сохранить сборку в память">
+          <button id="quickSaveBtn" class="btn-cyber btn-save-quick" title="Terilmani saqlash / Сохранить сборку">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
               <polyline points="17 21 17 13 7 13 7 21"></polyline>
               <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
-            <span>Сохранить</span>
-          </button>
-
-          <button id="soundToggleBtn" class="btn-icon-hud" title="Звуковые кибер-эффекты интерфейса" aria-label="Включить звук">
-            <svg id="soundIconOn" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            </svg>
+            <span id="txtQuickSave">Saqlash</span>
           </button>
         </div>
       </div>
@@ -162,7 +164,10 @@
           <div class="drawer-header">
             <div class="drawer-header-title">
               <span id="drawerCatTitle">ВЫБОР КОРПУСА</span>
-              <button id="drawerPinToggle" class="btn-icon-subtle" title="Закрепить панель (Pin)">📌</button>
+              <div class="drawer-header-actions">
+                <button id="drawerPinToggle" class="btn-icon-subtle" title="Закрепить панель (Pin)">📌</button>
+                <button id="drawerCloseMobileBtn" class="btn-icon-subtle drawer-close-mobile" title="Закрыть панель">✕</button>
+              </div>
             </div>
             
             <!-- Quick Live Search in Drawer -->
@@ -215,63 +220,63 @@
             </button>
 
             <!-- Open / Remove Glass Side Panel -->
-            <button id="toggleGlassBtn" class="btn-hud-3d btn-hud-glass" title="Снять или открыть боковое стекло для доступа внутрь">
+            <button id="toggleGlassBtn" class="btn-hud-3d btn-hud-glass" title="Oynani yechish yoki o‘rnatish">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M9 3v18" />
               </svg>
-              <span>Снять стекло</span>
+              <span id="txtToggleGlass">Oynani yechish</span>
             </button>
 
             <!-- Apply Thermal Paste Action -->
-            <button id="applyPasteBtn" class="btn-hud-3d" title="Нанести каплю термопасты на процессор">
+            <button id="applyPasteBtn" class="btn-hud-3d" title="Termopasta surtish">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m14 2 8 8-4 4-8-8 4-4Z" />
                 <path d="m4 16-2 6 6-2 10-10-4-4L4 16Z" />
               </svg>
-              <span>Термопаста</span>
+              <span id="txtApplyPaste">Termopasta</span>
             </button>
 
             <!-- Physical Power Button with glowing status LED -->
-            <button id="powerOnBtn" class="btn-hud-3d btn-hud-power powered-on" title="Включить / Выключить ПК">
+            <button id="powerOnBtn" class="btn-hud-3d btn-hud-power powered-on" title="Kompyuterni yoqish / o‘chirish">
               <span class="power-indicator-dot"></span>
-              <span>POWER ON</span>
+              <span id="txtPowerBtn">POWER ON</span>
             </button>
           </div>
 
           <!-- Center RGB Color Swatches -->
-          <div class="rgb-controller" title="Смена режима подсветки RGB">
-            <button class="rgb-color-btn rgb-btn-cyan active" data-color="cyan" title="Неоновый Циан"></button>
-            <button class="rgb-color-btn rgb-btn-purple" data-color="purple" title="Неоновый Пурпур"></button>
-            <button class="rgb-color-btn rgb-btn-green" data-color="green" title="Матричный Зеленый"></button>
-            <button class="rgb-color-btn rgb-btn-red" data-color="red" title="Кибер Красный"></button>
-            <button class="rgb-color-btn rgb-btn-rainbow" data-color="rainbow" title="Радужная Аура RGB"></button>
+          <div class="rgb-controller" title="RGB rangini o‘zgartirish">
+            <button class="rgb-color-btn rgb-btn-cyan active" data-color="cyan" title="Neon Moviy"></button>
+            <button class="rgb-color-btn rgb-btn-purple" data-color="purple" title="Neon Binafsha"></button>
+            <button class="rgb-color-btn rgb-btn-green" data-color="green" title="Matritsa Yashil"></button>
+            <button class="rgb-color-btn rgb-btn-red" data-color="red" title="Kiber Qizil"></button>
+            <button class="rgb-color-btn rgb-btn-rainbow" data-color="rainbow" title="Kamalak Aura"></button>
           </div>
 
           <div class="toolbar-group-right">
             <!-- 360 Auto-Rotate -->
-            <button id="toggleRotateBtn" class="btn-hud-3d" title="Автоматическое круговое вращение">
+            <button id="toggleRotateBtn" class="btn-hud-3d" title="360° aylantirish">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
               </svg>
-              <span>360°</span>
+              <span id="txtRotate">360°</span>
             </button>
 
             <!-- Camera View Angle Selector -->
-            <select id="cameraSelect" class="camera-select-hud" title="Ракурс камеры">
-              <option value="iso">📷 Изометрия</option>
-              <option value="interior">🔍 Интерьер (Сбоку)</option>
-              <option value="workbench">🛠️ Верстак</option>
-              <option value="front">💨 Фронт (Кулеры)</option>
-              <option value="top">🔝 Сверху (СВО)</option>
+            <select id="cameraSelect" class="camera-select-hud" title="Kamera burchagi">
+              <option value="iso">📷 Izometriya</option>
+              <option value="interior">🔍 Korpus ichi</option>
+              <option value="workbench">🛠️ Ish stoli</option>
+              <option value="front">💨 Old tomon</option>
+              <option value="top">🔝 Tepadan (SVO)</option>
             </select>
 
             <!-- Fullscreen Toggle -->
-            <button id="toggleFullscreenBtn" class="btn-hud-3d" title="Развернуть 3D витрину на весь экран">
+            <button id="toggleFullscreenBtn" class="btn-hud-3d" title="To‘liq ekranga yoyish">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
               </svg>
-              <span>На весь экран</span>
+              <span id="txtFullscreen">To‘liq ekran</span>
             </button>
 
             <!-- Exit Fullscreen Button (shown in fullscreen) -->
@@ -290,6 +295,56 @@
           <div class="floating-case-badge" id="floatingCaseBadge">
             <span class="badge-icon">🏛️</span>
             <span class="badge-name" id="floatingCaseName">Fractal North Walnut</span>
+          </div>
+        </div>
+
+        <!-- Interactive Hardware Part Disassembly & Assembly Toggle Strip -->
+        <div class="hardware-toggle-dock" id="hardwareToggleDock" title="Komponentlarni o‘rnatish yoki butunlay yechish / Установка и полное снятие деталей">
+          <div class="hardware-dock-title">
+            <span class="dock-title-icon">🔩</span>
+            <span id="txtPartsDockTitle">Boshqaruv: Qismlarni yechish / o‘rnatish</span>
+          </div>
+          <div class="hardware-toggle-buttons">
+            <button class="btn-part-toggle installed" data-part="gpu" title="Videokartani yechish / o‘rnatish">
+              <span class="part-icon">🎮</span>
+              <span class="part-name" id="txtPartGpu">GPU</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="cooler" title="Kullerni yechish / o‘rnatish">
+              <span class="part-icon">❄️</span>
+              <span class="part-name" id="txtPartCooler">Kuler</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="ram" title="Operativ xotirani yechish / o‘rnatish">
+              <span class="part-icon">⚡</span>
+              <span class="part-name" id="txtPartRam">RAM</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="cpu" title="Protsessorni yechish / o‘rnatish">
+              <span class="part-icon">🔲</span>
+              <span class="part-name" id="txtPartCpu">CPU</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="motherboard" title="Ona platani yechish / o‘rnatish">
+              <span class="part-icon">🖲️</span>
+              <span class="part-name" id="txtPartMb">Plata</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="ssd" title="SSD xotirani yechish / o‘rnatish">
+              <span class="part-icon">💾</span>
+              <span class="part-name" id="txtPartSsd">SSD</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="cables" title="Simlarni yashirish / ulash">
+              <span class="part-icon">🧵</span>
+              <span class="part-name" id="txtPartCables">Simlar</span>
+              <span class="part-status-dot"></span>
+            </button>
+            <button class="btn-part-toggle installed" data-part="glass" title="Yon oynani yechish / o‘rnatish">
+              <span class="part-icon">🪟</span>
+              <span class="part-name" id="txtPartGlass">Oyna</span>
+              <span class="part-status-dot"></span>
+            </button>
           </div>
         </div>
 
@@ -477,7 +532,7 @@
           <span>Корпусы</span>
         </button>
         <button class="cat-tab-btn" data-category="cpu">
-          <span class="tab-emoji">🧠</span>
+          <span class="tab-emoji">🔲</span>
           <span>Процессоры</span>
         </button>
         <button class="cat-tab-btn" data-category="cooler">
@@ -485,7 +540,7 @@
           <span>Охлаждение</span>
         </button>
         <button class="cat-tab-btn" data-category="motherboard">
-          <span class="tab-emoji">🔌</span>
+          <span class="tab-emoji">🖲️</span>
           <span>Материнские платы</span>
         </button>
         <button class="cat-tab-btn" data-category="ram">
@@ -649,6 +704,46 @@
       </div>
     </div>
   </div>
+
+  <!-- ========================================================================
+       BOTTOM FLOATING UTILITY BAR: AUDIO FX & LANGUAGE SWITCHER
+       ======================================================================== -->
+  <aside class="bottom-utility-bar" id="bottomUtilityBar" title="Sozlamalar va til / Настройки и язык">
+    <!-- Sound FX Toggle Button -->
+    <button id="soundToggleBtn" class="btn-utility-sound" title="Ovoz effektlari / Звуковые эффекты / Sound FX" aria-label="Ovoz effektlari">
+      <svg id="soundIconOn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      </svg>
+      <span id="soundLabelText">OVOZ: ON</span>
+    </button>
+
+    <!-- Language Switcher Dropup: UZ / RU / EN -->
+    <div class="lang-dropdown-container dropup" id="langDropdownContainer">
+      <button id="langTriggerBtn" class="lang-trigger-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Tilni tanlash / Выбор языка / Select Language">
+        <span class="lang-globe">🌐</span>
+        <span id="currentLangCode" class="lang-code-text">UZ</span>
+        <span class="lang-chevron">▴</span>
+      </button>
+      <div class="lang-dropdown-menu" id="langDropdownMenu" role="menu">
+        <button type="button" class="lang-option-btn active" data-lang="uz" role="menuitem">
+          <span class="lang-flag">🇺🇿</span>
+          <span class="lang-title">O'zbekcha</span>
+          <span class="lang-short">UZ</span>
+        </button>
+        <button type="button" class="lang-option-btn" data-lang="ru" role="menuitem">
+          <span class="lang-flag">🇷🇺</span>
+          <span class="lang-title">Русский</span>
+          <span class="lang-short">RU</span>
+        </button>
+        <button type="button" class="lang-option-btn" data-lang="en" role="menuitem">
+          <span class="lang-flag">🇬🇧</span>
+          <span class="lang-title">English</span>
+          <span class="lang-short">EN</span>
+        </button>
+      </div>
+    </div>
+  </aside>
 
   <!-- CYBER TOAST NOTIFICATION -->
   <div id="cyberToast" class="cyber-toast">

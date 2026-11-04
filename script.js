@@ -39,7 +39,13 @@ const state = {
   catalogSort: 'default',
 
   // LocalStorage Saved Builds
-  savedBuilds: []
+  savedBuilds: [],
+
+  // Language (UZ, RU, EN)
+  currentLang: 'uz',
+
+  // Currency (UZS, USD, RUB)
+  currentCurrency: 'uzs'
 };
 
 // ==========================================================================
@@ -211,6 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSavedBuildsFromStorage();
   initPresets(PC_DATA.presets.optimal);
   
+  try {
+    const savedLang = localStorage.getItem('cyberpc_lang');
+    if (savedLang && ['uz', 'ru', 'en'].includes(savedLang)) {
+      state.currentLang = savedLang;
+    }
+    const savedCurr = localStorage.getItem('cyberpc_currency');
+    if (savedCurr && ['uzs', 'usd', 'rub'].includes(savedCurr)) {
+      state.currentCurrency = savedCurr;
+    }
+  } catch (e) {}
+
   // Render sub-views
   renderDrawerChips();
   renderDrawerItems();
@@ -226,6 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sync3DWithState();
   }
 
+  setLanguage(state.currentLang);
+  setCurrency(state.currentCurrency);
   updateAssemblyStepUI();
 });
 
@@ -261,19 +280,35 @@ function sync3DWithState() {
 // ==========================================================================
 // 4. SLIDE-OUT HOVER DRAWER LOGIC
 // ==========================================================================
+const DRAWER_CAT_CONFIG = {
+  case: { icon: '🏛️', short: { uz: 'Korpus', ru: 'Корпус', en: 'Case' } },
+  cpu: { icon: '🔲', short: { uz: 'CPU', ru: 'Процессор', en: 'CPU' } },
+  cooler: { icon: '❄️', short: { uz: 'Kuler', ru: 'Кулер', en: 'Cooler' } },
+  motherboard: { icon: '🖲️', short: { uz: 'Plata', ru: 'Материнка', en: 'Motherboard' } },
+  ram: { icon: '⚡', short: { uz: 'RAM', ru: 'ОЗУ', en: 'RAM' } },
+  gpu: { icon: '🎮', short: { uz: 'GPU', ru: 'Видеокарта', en: 'GPU' } },
+  storage: { icon: '💾', short: { uz: 'SSD', ru: 'SSD Диск', en: 'SSD' } },
+  psu: { icon: '🔋', short: { uz: 'BP', ru: 'Блок питания', en: 'PSU' } }
+};
+
 function renderDrawerChips() {
   const container = document.getElementById('drawerCatChips');
   if (!container) return;
   container.innerHTML = '';
+  const lang = state.currentLang || 'uz';
 
-  PC_DATA.categories.forEach(cat => {
+  Object.keys(DRAWER_CAT_CONFIG).forEach(catId => {
+    const conf = DRAWER_CAT_CONFIG[catId];
     const btn = document.createElement('button');
-    btn.className = `drawer-chip-btn ${state.drawerCat === cat.id ? 'active' : ''}`;
-    btn.textContent = cat.name.split(' ')[0]; // short name
-    btn.dataset.catId = cat.id;
+    btn.type = 'button';
+    btn.className = `drawer-chip-btn ${state.drawerCat === catId ? 'active' : ''}`;
+    const name = conf.short[lang] || conf.short.ru;
+    btn.innerHTML = `<span class="chip-icon">${conf.icon}</span> <span>${name}</span>`;
+    btn.dataset.catId = catId;
 
-    btn.addEventListener('click', () => {
-      setDrawerCategory(cat.id);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setDrawerCategory(catId);
     });
 
     container.appendChild(btn);
@@ -282,10 +317,14 @@ function renderDrawerChips() {
 
 function setDrawerCategory(catId) {
   state.drawerCat = catId;
+  const lang = state.currentLang || 'uz';
+  const conf = DRAWER_CAT_CONFIG[catId];
   const catObj = PC_DATA.categories.find(c => c.id === catId);
   const title = document.getElementById('drawerCatTitle');
-  if (title && catObj) {
-    title.textContent = `ВЫБОР: ${catObj.name.toUpperCase()}`;
+  if (title) {
+    const tPrefix = (window.I18N && window.I18N[lang] && window.I18N[lang].drawerTitlePrefix) || 'ВЫБОР: ';
+    const displayName = conf ? (conf.short[lang] || conf.short.ru) : (catObj ? catObj.name : catId);
+    title.textContent = `${tPrefix}${displayName.toUpperCase()}`;
   }
 
   // Update active rail icons
@@ -680,18 +719,24 @@ function closeModal(modalId) {
 // 9. STEP-BY-STEP REALISTIC ASSEMBLY
 // ==========================================================================
 function updateAssemblyStepUI() {
-  const step = ASSEMBLY_STEPS[state.assemblyStep];
-  if (!step) return;
+  const lang = state.currentLang || 'uz';
+  const t = (window.I18N && window.I18N[lang]) ? window.I18N[lang] : window.I18N.ru;
+  const stepData = t && t.assemblySteps ? t.assemblySteps[state.assemblyStep] : null;
+  const origStep = ASSEMBLY_STEPS[state.assemblyStep];
+  if (!stepData && !origStep) return;
 
   const badgeElem = document.getElementById('assemblyStepBadge');
   const titleElem = document.getElementById('assemblyStepTitle');
   const descElem = document.getElementById('assemblyStepDesc');
   const actionText = document.getElementById('assemblyActionText');
 
-  if (badgeElem) badgeElem.textContent = step.badge;
-  if (titleElem) titleElem.textContent = step.title;
-  if (descElem) descElem.textContent = step.desc;
-  if (actionText) actionText.textContent = step.actionText;
+  const stepNum = state.assemblyStep + 1;
+  const badgeText = lang === 'uz' ? `${stepNum} / 8 - QADAM` : (lang === 'en' ? `STEP ${stepNum} OF 8` : `ШАГ ${stepNum} ИЗ 8`);
+
+  if (badgeElem) badgeElem.textContent = badgeText;
+  if (titleElem) titleElem.textContent = stepData ? stepData.title : origStep.title;
+  if (descElem) descElem.textContent = stepData ? stepData.desc : origStep.desc;
+  if (actionText) actionText.textContent = stepData ? (state.assemblyStep === 7 ? t.stepFinish : stepData.title) : origStep.actionText;
 }
 
 function executeAssemblyStep() {
@@ -862,6 +907,9 @@ function updateCompatibility() {
   }
 
   const badge = document.getElementById('compatBadge');
+  const lang = state.currentLang || 'uz';
+  const t = (window.I18N && window.I18N[lang]) ? window.I18N[lang] : window.I18N.ru;
+
   if (badge) {
     badge.className = 'header-compat-badge';
     if (issues.length > 0) {
@@ -872,7 +920,7 @@ function updateCompatibility() {
       badge.innerHTML = `<span class="compat-icon">⚠️</span> <span class="compat-text">${warnings[0]}</span>`;
     } else {
       badge.classList.add('compat-badge-ok');
-      badge.innerHTML = `<span class="compat-icon">✔</span> <span class="compat-text">Система совместима</span>`;
+      badge.innerHTML = `<span class="compat-icon">✔</span> <span class="compat-text" id="txtCompat">${t.compatOk}</span>`;
     }
   }
 }
@@ -980,25 +1028,49 @@ function setupEventListeners() {
   document.getElementById('backToBuilderBtn')?.addEventListener('click', () => switchPage('pageConfigurator'));
   document.getElementById('btnOpenFullCatalog')?.addEventListener('click', () => switchPage('pageCatalog'));
 
-  // Rail Category Buttons
+  // Rail Category Buttons - Switches category WITHOUT auto-pinning!
   document.querySelectorAll('.rail-cat-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const cat = btn.dataset.cat;
       setDrawerCategory(cat);
+      // On mobile screens only, open drawer temporarily so touch users can browse
+      if (window.innerWidth <= 1024) {
+        const rail = document.getElementById('catalogDockRail');
+        if (rail) rail.classList.add('is-pinned');
+      }
     });
   });
 
-  // Pin Drawer Toggle Buttons
+  // Pin / Unpin Drawer Toggle Buttons - ONLY pinned when user explicitly clicks!
   const togglePin = () => {
     state.isDrawerPinned = !state.isDrawerPinned;
     const rail = document.getElementById('catalogDockRail');
     const pinBtn = document.getElementById('pinDrawerBtn');
+    const drawerPin = document.getElementById('drawerPinToggle');
     if (rail) rail.classList.toggle('is-pinned', state.isDrawerPinned);
     if (pinBtn) pinBtn.classList.toggle('pinned', state.isDrawerPinned);
-    showToast(state.isDrawerPinned ? 'Каталог закреплен открытым' : 'Каталог скрывается при отведении курсора');
+    if (drawerPin) drawerPin.classList.toggle('pinned', state.isDrawerPinned);
+    CyberSound.playSelect();
+    const lang = state.currentLang || 'uz';
+    const msg = state.isDrawerPinned
+      ? (lang === 'uz' ? 'Katalog qadaldi (doimiy ochiq)' : (lang === 'en' ? 'Catalog pinned open' : 'Каталог закреплен открытым'))
+      : (lang === 'uz' ? 'Katalog qadami yechildi (avto-yopiladi)' : (lang === 'en' ? 'Catalog unpinned (auto-closes)' : 'Каталог откреплен (скрывается при отведении)'));
+    showToast(msg);
   };
   document.getElementById('pinDrawerBtn')?.addEventListener('click', togglePin);
   document.getElementById('drawerPinToggle')?.addEventListener('click', togglePin);
+
+  // Close drawer on mobile
+  document.getElementById('drawerCloseMobileBtn')?.addEventListener('click', () => {
+    state.isDrawerPinned = false;
+    const rail = document.getElementById('catalogDockRail');
+    if (rail) rail.classList.remove('is-pinned');
+    const pinBtn = document.getElementById('pinDrawerBtn');
+    if (pinBtn) pinBtn.classList.remove('pinned');
+    const drawerPin = document.getElementById('drawerPinToggle');
+    if (drawerPin) drawerPin.classList.remove('pinned');
+    CyberSound.playSelect();
+  });
 
   // Drawer Search Input
   const drawerInput = document.getElementById('drawerSearchInput');
@@ -1045,6 +1117,57 @@ function setupEventListeners() {
   document.getElementById('catalogSortSelect')?.addEventListener('change', (e) => {
     state.catalogSort = e.target.value;
     renderFullCatalog();
+  });
+
+  // Language Switcher Dropdown (UZ / RU / EN)
+  const langTriggerBtn = document.getElementById('langTriggerBtn');
+  const langContainer = document.getElementById('langDropdownContainer');
+  const langMenu = document.getElementById('langDropdownMenu');
+
+  if (langTriggerBtn && langContainer) {
+    langTriggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = langContainer.classList.toggle('open');
+      langTriggerBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      if (isOpen) CyberSound.playSelect();
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!langContainer.contains(e.target)) {
+        langContainer.classList.remove('open');
+        langTriggerBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && langContainer.classList.contains('open')) {
+        langContainer.classList.remove('open');
+        langTriggerBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  document.querySelectorAll('.lang-option-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const lang = e.currentTarget.dataset.lang;
+      setLanguage(lang);
+      if (langContainer) langContainer.classList.remove('open');
+      if (langTriggerBtn) langTriggerBtn.setAttribute('aria-expanded', 'false');
+      CyberSound.playSelect();
+      const langName = lang === 'uz' ? "O'zbek tili tanlandi" : (lang === 'en' ? 'English language selected' : 'Выбран русский язык');
+      showToast(langName);
+    });
+  });
+
+  // Currency Switcher (UZS / USD / RUB)
+  document.querySelectorAll('.btn-curr').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const curr = e.currentTarget.dataset.curr;
+      setCurrency(curr);
+    });
   });
 
   // Studio White / Cyber Dark Light Theme Toggle
@@ -1114,6 +1237,34 @@ function setupEventListeners() {
     }
   });
 
+  // Interactive Hardware Part Disassembly & Assembly Toggle Buttons
+  document.querySelectorAll('.btn-part-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const part = btn.dataset.part;
+      if (!state.viewer3D) return;
+
+      const isInstalled = state.viewer3D.toggleComponent(part);
+      btn.classList.toggle('installed', isInstalled);
+      btn.classList.toggle('uninstalled', !isInstalled);
+
+      const lang = state.currentLang || 'uz';
+      const partName = btn.querySelector('.part-name')?.textContent || part;
+
+      if (part === 'gpu' || part === 'ram') {
+        CyberSound.playRamClickSound();
+      } else if (part === 'cooler' || part === 'motherboard' || part === 'cpu') {
+        CyberSound.playScrewSound();
+      } else {
+        CyberSound.playRelayClick();
+      }
+
+      const msg = isInstalled
+        ? (lang === 'uz' ? `${partName} korpusga o‘rnatildi!` : (lang === 'en' ? `${partName} installed into PC!` : `${partName} установлена в корпус!`))
+        : (lang === 'uz' ? `${partName} butunlay yechildi!` : (lang === 'en' ? `${partName} completely removed!` : `${partName} снята из корпуса!`));
+      showToast(msg);
+    });
+  });
+
   document.getElementById('cameraSelect')?.addEventListener('change', (e) => {
     if (state.viewer3D) {
       state.viewer3D.setCameraView(e.target.value);
@@ -1156,17 +1307,17 @@ function setupEventListeners() {
   // Assembly Step Action Button
   document.getElementById('assemblyStepActionBtn')?.addEventListener('click', executeAssemblyStep);
 
-  // RGB Swatches
+  // RGB Swatches: Changes ONLY inside the 3D PC (fans, RAM, cooler, GPU, chassis)
   document.querySelectorAll('.rgb-color-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.rgb-color-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const color = btn.dataset.color;
       state.activeRgbTheme = color;
-      document.documentElement.setAttribute('data-rgb', color);
+      // Do not alter whole website theme - RGB is isolated to 3D PC
       if (state.viewer3D) state.viewer3D.setRgbTheme(color);
       CyberSound.playSelect();
-      showToast(`RGB подсветка: ${getRussianColorName(color)}`);
+      showToast(`RGB подсветка ПК: ${getRussianColorName(color)}`);
     });
   });
 
@@ -1184,9 +1335,20 @@ function setupEventListeners() {
   // Sound FX Toggle
   document.getElementById('soundToggleBtn')?.addEventListener('click', (e) => {
     state.soundEnabled = !state.soundEnabled;
-    e.currentTarget.classList.toggle('active', state.soundEnabled);
+    const btn = document.getElementById('soundToggleBtn');
+    if (btn) btn.classList.toggle('active', state.soundEnabled);
+    const soundText = document.getElementById('soundLabelText');
+    const lang = state.currentLang || 'uz';
+    if (soundText) {
+      if (lang === 'uz') soundText.textContent = state.soundEnabled ? 'OVOZ: ON' : 'OVOZ: OFF';
+      else if (lang === 'en') soundText.textContent = state.soundEnabled ? 'SOUND: ON' : 'SOUND: OFF';
+      else soundText.textContent = state.soundEnabled ? 'ЗВУК: ВКЛ' : 'ЗВУК: ВЫКЛ';
+    }
     if (state.soundEnabled) CyberSound.playSelect();
-    showToast(`Звуковые эффекты: ${state.soundEnabled ? 'ВКЛ' : 'ВЫКЛ'}`);
+    const toastMsg = state.soundEnabled
+      ? (lang === 'uz' ? 'Ovoz effektlari: YOQILDI' : (lang === 'en' ? 'Sound FX: ON' : 'Звуковые эффекты: ВКЛ'))
+      : (lang === 'uz' ? 'Ovoz effektlari: O‘CHIRILDI' : (lang === 'en' ? 'Sound FX: OFF' : 'Звуковые эффекты: ВЫКЛ'));
+    showToast(toastMsg);
   });
 
   // Presets
@@ -1351,7 +1513,196 @@ function showToast(msg) {
 }
 
 function formatRub(val) {
-  return (val || 0).toLocaleString('ru-RU') + ' ₽';
+  const curr = state.currentCurrency || 'uzs';
+  const lang = state.currentLang || 'uz';
+  const num = Math.round(val || 0);
+
+  // US Dollar ($) - 1 USD ≈ 12,800 UZS
+  if (curr === 'usd') {
+    const usd = Math.round(num / 12800);
+    return '$' + usd.toLocaleString('en-US');
+  }
+
+  // Russian Ruble (₽) - 1 RUB ≈ 135 UZS
+  if (curr === 'rub') {
+    const rub = Math.round(num / 135);
+    return rub.toLocaleString('ru-RU') + ' ₽';
+  }
+
+  // Uzbekistani Som (so'm / сум / UZS)
+  if (lang === 'uz') {
+    return num.toLocaleString('uz-UZ') + " so'm";
+  } else if (lang === 'en') {
+    return num.toLocaleString('en-US') + ' UZS';
+  } else {
+    return num.toLocaleString('ru-RU') + ' сум';
+  }
+}
+
+function setCurrency(curr) {
+  if (!['uzs', 'usd', 'rub'].includes(curr)) curr = 'uzs';
+  state.currentCurrency = curr;
+  try {
+    localStorage.setItem('cyberpc_currency', curr);
+  } catch (e) {}
+
+  document.querySelectorAll('.btn-curr').forEach(b => {
+    b.classList.toggle('active', b.dataset.curr === curr);
+  });
+
+  updatePriceDisplay();
+  renderDrawerItems();
+  renderFullCatalog();
+  renderSavedBuildsList();
+
+  const lang = state.currentLang || 'uz';
+  let currToast = '';
+  if (curr === 'usd') {
+    currToast = lang === 'uz' ? 'Valyuta: AQSH Dollari ($)' : (lang === 'en' ? 'Currency: US Dollar ($)' : 'Валюта: Доллары США ($)');
+  } else if (curr === 'rub') {
+    currToast = lang === 'uz' ? 'Valyuta: Rossiya Rubli (₽)' : (lang === 'en' ? 'Currency: Russian Ruble (₽)' : 'Валюта: Российский рубль (₽)');
+  } else {
+    currToast = lang === 'uz' ? "Valyuta: O'zbek so'mi (so'm)" : (lang === 'en' ? 'Currency: Uzbek Som (UZS)' : 'Валюта: Узбекский сум (сум)');
+  }
+  showToast(currToast);
+}
+
+function setLanguage(lang) {
+  if (!window.I18N || !window.I18N[lang]) lang = 'uz';
+  state.currentLang = lang;
+  try {
+    localStorage.setItem('cyberpc_lang', lang);
+  } catch (e) {}
+
+  document.querySelectorAll('.lang-option-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  const currentLangCode = document.getElementById('currentLangCode');
+  if (currentLangCode) currentLangCode.textContent = lang.toUpperCase();
+
+  const t = window.I18N[lang];
+
+  // Header & Brand
+  const brandSub = document.getElementById('txtBrandSub');
+  if (brandSub) brandSub.textContent = t.brandSub;
+
+  const navB = document.getElementById('txtNavBuilder');
+  if (navB) navB.textContent = t.tabBuilder;
+  const navC = document.getElementById('txtNavCatalog');
+  if (navC) navC.textContent = t.tabCatalog;
+  const navS = document.getElementById('txtNavSaved');
+  if (navS) navS.textContent = t.tabSaved;
+
+  const totalLbl = document.getElementById('txtTotalLabel');
+  if (totalLbl) totalLbl.textContent = t.totalLabel;
+  const qSave = document.getElementById('txtQuickSave');
+  if (qSave) qSave.textContent = t.saveBtn;
+
+  // Bottom Utility Bar Sound Label
+  const soundText = document.getElementById('soundLabelText');
+  if (soundText) {
+    if (lang === 'uz') soundText.textContent = state.soundEnabled ? 'OVOZ: ON' : 'OVOZ: OFF';
+    else if (lang === 'en') soundText.textContent = state.soundEnabled ? 'SOUND: ON' : 'SOUND: OFF';
+    else soundText.textContent = state.soundEnabled ? 'ЗВУК: ВКЛ' : 'ЗВУК: ВЫКЛ';
+  }
+
+  // 3D Controls
+  const glassTxt = document.getElementById('txtToggleGlass');
+  if (glassTxt) {
+    const isOpen = state.viewer3D ? state.viewer3D.isGlassOpen : false;
+    glassTxt.textContent = isOpen ? t.glassClose : t.glassOpen;
+  }
+  const pasteTxt = document.getElementById('txtApplyPaste');
+  if (pasteTxt) pasteTxt.textContent = t.pasteBtn;
+
+  const pwrTxt = document.getElementById('txtPowerBtn');
+  if (pwrTxt) {
+    const isPwr = state.viewer3D ? state.viewer3D.isPoweredOn : true;
+    pwrTxt.textContent = isPwr ? t.powerOn : t.powerOff;
+  }
+
+  const rotTxt = document.getElementById('txtRotate');
+  if (rotTxt) rotTxt.textContent = t.rotateBtn;
+
+  const fsTxt = document.getElementById('txtFullscreen');
+  if (fsTxt) fsTxt.textContent = lang === 'uz' ? 'To‘liq ekran' : (lang === 'en' ? 'Fullscreen' : 'На весь экран');
+
+  // Camera Options
+  const camSelect = document.getElementById('cameraSelect');
+  if (camSelect) {
+    const curVal = camSelect.value;
+    camSelect.innerHTML = `
+      <option value="iso">📷 ${t.camIso}</option>
+      <option value="interior">🔍 ${t.camInterior}</option>
+      <option value="workbench">🛠️ ${t.camBench}</option>
+      <option value="front">💨 ${t.camFront}</option>
+      <option value="top">🔝 ${t.camTop}</option>
+    `;
+    camSelect.value = curVal;
+  }
+
+  // Drawer Title & Search Input
+  const searchInp = document.getElementById('drawerSearchInput');
+  if (searchInp) searchInp.placeholder = t.searchPlaceholder;
+
+  const fullCatLink = document.getElementById('btnOpenFullCatalog');
+  if (fullCatLink) {
+    const span = fullCatLink.querySelector('span');
+    if (span) span.textContent = t.openFullCatalog;
+  }
+
+  // Categories in PC_DATA
+  if (PC_DATA && PC_DATA.categories) {
+    PC_DATA.categories.forEach(cat => {
+      if (t.categories && t.categories[cat.id]) {
+        cat.name = t.categories[cat.id];
+      }
+    });
+  }
+
+  // Drawer Title
+  const drawerTitle = document.getElementById('drawerCatTitle');
+  if (drawerTitle) {
+    const catObj = PC_DATA.categories.find(c => c.id === state.drawerCat);
+    drawerTitle.textContent = `${t.drawerTitlePrefix}${(catObj ? catObj.name : state.drawerCat).toUpperCase()}`;
+  }
+
+  // Interactive Hardware Disassembly / Assembly Dock Labels
+  const partsDockTitle = document.getElementById('txtPartsDockTitle');
+  if (partsDockTitle && t.partsDockTitle) partsDockTitle.textContent = t.partsDockTitle;
+
+  const partGpu = document.getElementById('txtPartGpu');
+  if (partGpu && t.partGpu) partGpu.textContent = t.partGpu;
+
+  const partCooler = document.getElementById('txtPartCooler');
+  if (partCooler && t.partCooler) partCooler.textContent = t.partCooler;
+
+  const partRam = document.getElementById('txtPartRam');
+  if (partRam && t.partRam) partRam.textContent = t.partRam;
+
+  const partCpu = document.getElementById('txtPartCpu');
+  if (partCpu && t.partCpu) partCpu.textContent = t.partCpu;
+
+  const partMb = document.getElementById('txtPartMb');
+  if (partMb && t.partMb) partMb.textContent = t.partMb;
+
+  const partSsd = document.getElementById('txtPartSsd');
+  if (partSsd && t.partSsd) partSsd.textContent = t.partSsd;
+
+  const partCables = document.getElementById('txtPartCables');
+  if (partCables && t.partCables) partCables.textContent = t.partCables;
+
+  const partGlass = document.getElementById('txtPartGlass');
+  if (partGlass && t.partGlass) partGlass.textContent = t.partGlass;
+
+  // Re-render UI
+  renderDrawerChips();
+  renderDrawerItems();
+  renderFullCatalog();
+  updatePriceDisplay();
+  updateCompatibility();
+  updateAssemblyStepUI();
+  updateBenchmarkUI();
 }
 
 function getRussianColorName(color) {

@@ -335,6 +335,30 @@ const PC_DATA = {
         badge: 'Отличный продув',
         color: 'black-mesh',
         desc: 'Сетчатая передняя панель с сотовой перфорацией и 4 предустановленных неоновых кулера.'
+      },
+      {
+        id: 'case-lianli-o11',
+        name: 'Lian Li O11 Dynamic EVO Dual-Chamber',
+        type: 'dual-chamber-evo',
+        fans: '3x Reverse ARGB + 3x Top Radiator Mount',
+        glass: 'Двойное панорамное стекло без стойки',
+        price: 3150000,
+        tier: 'prestige',
+        badge: 'Двухкамерный Аквариум',
+        color: 'anodized-gunmetal',
+        desc: 'Легендарный двухкамерный корпус с разделением блока питания, реверсивной компоновкой и панорамным обзором.'
+      },
+      {
+        id: 'case-terra-itx',
+        name: 'Fractal Terra Jade Green Walnut ITX',
+        type: 'boutique-itx',
+        fans: 'Mini-ITX сэндвич + PCIe 4.0 Riser',
+        glass: 'Анодированный Jade Green + Массив ореха',
+        price: 2850000,
+        tier: 'high',
+        badge: 'Бутик Mini-ITX',
+        color: 'jade-walnut',
+        desc: 'Компактный шедевр 10.4L из анодированного изумрудного алюминия с акцентной панелью из натурального ореха.'
       }
     ],
 

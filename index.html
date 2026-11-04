@@ -6,6 +6,9 @@
   <title>Cyber-Lab Custom PC — 3D Конфигуратор Сборки ПК</title>
   <meta name="description" content="Интерактивный 3D-конфигуратор сборки ПК с реалистичной студийной визуализацией, уникальными корпусами, каталогом комплектующих и сохранением собственных сборок.">
   
+  <!-- Custom Cyber-Lab Tab Favicon & Emblem -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='cg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f3ff'/%3E%3Cstop offset='50%25' stop-color='%2338bdf8'/%3E%3Cstop offset='100%25' stop-color='%23ff007f'/%3E%3C/linearGradient%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%230b0f19'/%3E%3Cstop offset='100%25' stop-color='%23020617'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23bg)' stroke='%2300f3ff' stroke-width='2.2'/%3E%3Cpolygon points='32,9 53,21 53,43 32,55 11,43 11,21' fill='%2300f3ff' fill-opacity='0.12' stroke='url(%23cg)' stroke-width='3.2' stroke-linejoin='round'/%3E%3Crect x='23' y='23' width='18' height='18' rx='4' fill='%23050b14' stroke='%2300f3ff' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='4' fill='%23ff007f'/%3E%3Cpath d='M32,9 L32,23 M32,41 L32,55 M11,32 L23,32 M41,32 L53,32 M20,20 L24,24 M44,20 L40,24 M20,44 L24,40 M44,44 L40,40' stroke='%2300f3ff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+  
   <!-- Cyberpunk Fonts: Orbitron, Rajdhani, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -721,7 +724,12 @@
     <!-- Language Switcher Dropup: UZ / RU / EN -->
     <div class="lang-dropdown-container dropup" id="langDropdownContainer">
       <button id="langTriggerBtn" class="lang-trigger-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Tilni tanlash / Выбор языка / Select Language">
-        <span class="lang-globe">🌐</span>
+        <span class="lang-globe">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </span>
         <span id="currentLangCode" class="lang-code-text">UZ</span>
         <span class="lang-chevron">▴</span>
       </button>

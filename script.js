@@ -1247,6 +1247,18 @@ function setupEventListeners() {
       btn.classList.toggle('installed', isInstalled);
       btn.classList.toggle('uninstalled', !isInstalled);
 
+      // If motherboard was toggled, update daughter buttons to reflect current viewer state
+      if (part === 'motherboard') {
+        document.querySelectorAll('.btn-part-toggle').forEach(otherBtn => {
+          const otherPart = otherBtn.dataset.part;
+          if (['cpu', 'cooler', 'ram', 'gpu', 'ssd', 'cables'].includes(otherPart)) {
+            const isChildVisible = isInstalled ? (state.viewer3D.installed[otherPart] !== false) : false;
+            otherBtn.classList.toggle('installed', isChildVisible);
+            otherBtn.classList.toggle('uninstalled', !isChildVisible);
+          }
+        });
+      }
+
       const lang = state.currentLang || 'uz';
       const partName = btn.querySelector('.part-name')?.textContent || part;
 

@@ -403,6 +403,10 @@ body::before {
 .lang-globe {
   font-size: 0.88rem;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #00f3ff;
 }
 
 .lang-code-text {

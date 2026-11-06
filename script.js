@@ -45,7 +45,12 @@ const state = {
   currentLang: 'uz',
 
   // Currency (UZS, USD, RUB)
-  currentCurrency: 'uzs'
+  currentCurrency: 'uzs',
+
+  // Owner & Support Portal
+  isOwner: false,
+  ownerTicketFilter: 'all',
+  supportTickets: []
 };
 
 // ==========================================================================
@@ -235,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSavedBuildsList();
   updateUI();
   setupEventListeners();
+  initSupportAndOwnerSystem();
 
   // Initialize 3D Engine
   if (typeof CyberPC3DViewer !== 'undefined') {
@@ -262,12 +268,51 @@ function initPresets(preset) {
 function sync3DWithState() {
   if (!state.viewer3D) return;
   const psuId = state.selected.psu ? state.selected.psu.id : undefined;
-  if (state.selected.case) state.viewer3D.buildCase(state.selected.case.id, psuId);
-  if (state.selected.motherboard) state.viewer3D.buildMotherboard(state.selected.motherboard.id);
-  if (state.selected.cooler) state.viewer3D.buildCooler(state.selected.cooler.id);
-  if (state.selected.gpu) state.viewer3D.buildGpu(state.selected.gpu.id);
-  if (state.selected.ram) state.viewer3D.buildRam(state.selected.ram.id);
-  if (state.selected.storage) state.viewer3D.buildSsd(state.selected.storage.id);
+  if (state.selected.case) {
+    state.viewer3D.buildCase(state.selected.case.id, psuId);
+  }
+
+  if (state.selected.motherboard) {
+    state.viewer3D.buildMotherboard(state.selected.motherboard.id);
+  } else if (state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent('motherboard');
+  }
+
+  if (state.selected.cpu) {
+    state.viewer3D.buildCpuChip(state.selected.cpu.id);
+  } else if (state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent('cpu');
+  }
+
+  if (state.selected.cooler) {
+    state.viewer3D.buildCooler(state.selected.cooler.id);
+  } else if (state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent('cooler');
+  }
+
+  if (state.selected.gpu) {
+    state.viewer3D.buildGpu(state.selected.gpu.id);
+  } else if (state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent('gpu');
+  }
+
+  if (state.selected.ram) {
+    state.viewer3D.buildRam(state.selected.ram.id);
+  } else if (state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent('ram');
+  }
+
+  if (state.selected.storage) {
+    state.viewer3D.buildSsd(state.selected.storage.id);
+  } else if (state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent('storage');
+  }
+
+  // Automatic chassis bounds verification and component auto-fit
+  if (state.viewer3D.autoFitAndValidateChassis) {
+    state.viewer3D.autoFitAndValidateChassis();
+  }
+
   state.viewer3D.setRgbTheme(state.activeRgbTheme);
 
   // Update floating case name badge in 3D
@@ -383,16 +428,26 @@ function renderDrawerItems() {
     if (item.tdp) tagsHtml += `<span class="drawer-mini-tag">${item.tdp}W</span>`;
     if (item.badge) tagsHtml += `<span class="drawer-mini-tag" style="color:var(--neon-pink);">${item.badge}</span>`;
 
+    const lang = state.currentLang || 'uz';
+    const removeLabel = lang === 'uz' ? 'Olib tashlash' : (lang === 'en' ? 'Remove' : 'Снять');
+
     card.innerHTML = `
       <div class="drawer-item-info">
         <span class="drawer-item-name">${item.name}</span>
         <div class="drawer-item-meta">${tagsHtml}</div>
       </div>
-      <div class="drawer-item-price">${formatRub(item.price)}</div>
+      <div class="drawer-item-price">
+        ${formatRub(item.price)}
+        ${isSelected && catId !== 'case' ? `<span class="drawer-remove-badge" title="${removeLabel}">✕ ${removeLabel}</span>` : ''}
+      </div>
     `;
 
     card.addEventListener('click', () => {
-      selectComponent(catId, item);
+      if (isSelected && catId !== 'case') {
+        removeComponent(catId);
+      } else {
+        selectComponent(catId, item);
+      }
       renderDrawerItems();
     });
 
@@ -404,6 +459,12 @@ function renderDrawerItems() {
 // 5. COMPONENT SELECTION & REAL-TIME 3D UPDATES
 // ==========================================================================
 function selectComponent(catId, item) {
+  // If clicking an already selected item (except chassis), uninstall it
+  if (state.selected[catId] && state.selected[catId].id === item.id && catId !== 'case') {
+    removeComponent(catId);
+    return;
+  }
+
   state.selected[catId] = item;
 
   // Audio feedback
@@ -429,7 +490,43 @@ function selectComponent(catId, item) {
   }
 
   updateUI();
-  showToast(`Деталь обновлена: ${item.name}`);
+  const lang = state.currentLang || 'uz';
+  const msg = lang === 'uz'
+    ? `O‘rnatildi: ${item.name}`
+    : (lang === 'en' ? `Installed: ${item.name}` : `Установлено в ПК: ${item.name}`);
+  showToast(msg);
+}
+
+function removeComponent(catId) {
+  if (catId === 'case') {
+    const lang = state.currentLang || 'uz';
+    const msg = lang === 'uz'
+      ? 'Korpusni butunlay olib tashlab bo‘lmaydi. Boshqa modelni tanlang.'
+      : (lang === 'en' ? 'Chassis cannot be removed. Select another model.' : 'Корпус нельзя снять. Выберите другую модель.');
+    showToast(msg);
+    return;
+  }
+
+  const oldItem = state.selected[catId];
+  if (!oldItem) return;
+
+  state.selected[catId] = null;
+  CyberSound.playRelayClick();
+
+  if (state.viewer3D && state.viewer3D.clearComponent) {
+    state.viewer3D.clearComponent(catId);
+  }
+
+  updateUI();
+  renderDrawerItems();
+  renderFullCatalog();
+
+  const lang = state.currentLang || 'uz';
+  const name = oldItem ? oldItem.name : catId;
+  const msg = lang === 'uz'
+    ? `«${name}» olib tashlandi`
+    : (lang === 'en' ? `«${name}» removed from build` : `Деталь снята: «${name}»`);
+  showToast(msg);
 }
 
 // ==========================================================================
@@ -526,21 +623,23 @@ function renderFullCatalog() {
 
       <div class="product-bottom-row">
         <div class="product-price">${formatRub(item.price)}</div>
-        <button class="btn-insert-build ${isSelected ? 'selected' : ''}" data-cat-id="${catId}" data-item-id="${item.id}">
-          ${isSelected ? '✔ В сборке' : '➕ Вставить в сборку'}
+        <button class="btn-insert-build ${isSelected ? 'selected' : ''}" data-cat-id="${catId}" data-item-id="${item.id}" title="${isSelected && catId !== 'case' ? 'Нажмите, чтобы снять из ПК' : ''}">
+          ${isSelected ? (catId === 'case' ? '✔ Выбран' : '🗑️ Снять из сборки') : '➕ Вставить в сборку'}
         </button>
       </div>
     `;
 
     const insertBtn = card.querySelector('.btn-insert-build');
-    insertBtn.addEventListener('click', () => {
-      selectComponent(catId, item);
+    insertBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isSelected && catId !== 'case') {
+        removeComponent(catId);
+      } else {
+        selectComponent(catId, item);
+        switchPage('pageConfigurator');
+      }
       renderFullCatalog();
       renderDrawerItems();
-      
-      // Navigate smoothly back to 3D Configurator page
-      switchPage('pageConfigurator');
-      showToast(`Установлено в 3D компьютер: ${item.name}`);
     });
 
     container.appendChild(card);
@@ -1653,21 +1752,38 @@ function setupEventListeners() {
   document.getElementById('presetPrestigeBtn')?.addEventListener('click', () => applyPreset(PC_DATA.presets.prestige));
 
   // Reset build from scratch ("С чистого листа / Собрать самому")
+  // User explicitly requested: "измени кнопку с чистого листа чтобы она все уберала кроме корпуса тоесть компплектующе"
   document.getElementById('resetBuildBtn')?.addEventListener('click', () => {
     CyberSound.playWarning();
+    const currentCase = state.selected.case || PC_DATA.components.case[0];
+
+    // Remove all internal components except the chassis
     Object.keys(state.selected).forEach(k => {
       state.selected[k] = null;
     });
-    // Set minimal default case so 3D isn't completely empty
-    state.selected.case = PC_DATA.components.case[0];
+    state.selected.case = currentCase;
 
-    sync3DWithState();
+    // Direct 3D scene clear: removes motherboard, CPU, cooler, RAM, GPU, SSD, cables
+    if (state.viewer3D) {
+      if (state.viewer3D.clearAllComponents) {
+        state.viewer3D.clearAllComponents();
+        state.viewer3D.buildCase(currentCase.id);
+      } else {
+        sync3DWithState();
+      }
+    }
+
     updateUI();
     renderDrawerItems();
     renderFullCatalog();
     state.assemblyStep = 0;
     updateAssemblyStepUI();
-    showToast('Сборка очищена! Добавляйте нужные вам компоненты из каталога.');
+
+    const lang = state.currentLang || 'uz';
+    const msg = lang === 'uz'
+      ? 'Barcha ichki qismlar olib tashlandi! Faqat korpus qoldi.'
+      : (lang === 'en' ? 'All internal components removed! Only the chassis remains.' : 'Все комплектующие убраны! В сборке остался только корпус.');
+    showToast(msg);
   });
 
   // Save / Load Modal Triggers
@@ -1835,6 +1951,430 @@ function generateBuildSummaryText() {
   return text;
 }
 
+// ==========================================================================
+// 12. USER SUPPORT & OWNER COMPLAINTS PORTAL SYSTEM
+// ==========================================================================
+const SUPPORT_STORAGE_KEY = 'cyberpc_support_tickets';
+const OWNER_AUTH_KEY = 'cyberpc_owner_auth';
+
+const DEFAULT_SUPPORT_TICKETS = [
+  {
+    id: 'ticket_demo_1',
+    date: '2026-11-05 14:22',
+    timestamp: 1730802120000,
+    name: 'Алишер Каримов',
+    contact: '+998 90 987-65-43 (@alisher_it)',
+    category: 'compat',
+    categoryName: 'Совместимость',
+    message: 'Здравствуйте! Хватит ли кулера DeepCool AK620 Digital для охлаждения Core i7-13700KF при рендере в Blender? Или лучше взять Arctic Liquid Freezer III 360?',
+    specs: 'CPU: Intel Core i7-13700KF\nCooler: DeepCool AK620 Digital\nMotherboard: ASUS TUF GAMING B760-PLUS\nRAM: 32GB DDR5-6000\nGPU: RTX 4070 Ti SUPER',
+    status: 'new'
+  },
+  {
+    id: 'ticket_demo_2',
+    date: '2026-11-06 10:15',
+    timestamp: 1730873700000,
+    name: 'Даврон',
+    contact: '@davron_pc',
+    category: 'suggest',
+    categoryName: 'Предложение деталей',
+    message: 'Очень крутой 3D конфигуратор! Добавьте, пожалуйста, корпус Lian Li O11 Vision и новые материнки на Z890 для Intel Core Ultra 200S.',
+    specs: null,
+    status: 'in_progress'
+  }
+];
+
+function initSupportAndOwnerSystem() {
+  loadSupportTickets();
+  checkOwnerAuthStatus();
+  setupSupportAndOwnerListeners();
+}
+
+function loadSupportTickets() {
+  try {
+    const raw = localStorage.getItem(SUPPORT_STORAGE_KEY);
+    if (raw) {
+      state.supportTickets = JSON.parse(raw);
+    } else {
+      state.supportTickets = [...DEFAULT_SUPPORT_TICKETS];
+      saveSupportTickets();
+    }
+  } catch (e) {
+    state.supportTickets = [...DEFAULT_SUPPORT_TICKETS];
+  }
+}
+
+function saveSupportTickets() {
+  try {
+    localStorage.setItem(SUPPORT_STORAGE_KEY, JSON.stringify(state.supportTickets));
+  } catch (e) {}
+}
+
+function checkOwnerAuthStatus() {
+  try {
+    state.isOwner = localStorage.getItem(OWNER_AUTH_KEY) === 'true';
+  } catch (e) {
+    state.isOwner = false;
+  }
+  const badgeBtn = document.getElementById('ownerPortalBtn');
+  if (badgeBtn) {
+    badgeBtn.style.display = state.isOwner ? 'inline-flex' : 'none';
+  }
+}
+
+function renderOwnerTickets(filter = null) {
+  if (filter) state.ownerTicketFilter = filter;
+  const currentFilter = state.ownerTicketFilter || 'all';
+
+  const container = document.getElementById('ownerTicketsContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  updateOwnerStats();
+
+  let tickets = [...state.supportTickets];
+  if (currentFilter === 'new') {
+    tickets = tickets.filter(t => t.status === 'new');
+  } else if (currentFilter === 'resolved') {
+    tickets = tickets.filter(t => t.status === 'resolved');
+  }
+
+  // Sort descending (newest first)
+  tickets.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  if (tickets.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 40px 20px; text-align: center; color: #64748b; font-family: var(--font-display);">
+        ${currentFilter === 'all' ? 'Обращений пока нет.' : (currentFilter === 'new' ? 'Нет новых нерешённых обращений 👍' : 'Нет решённых обращений.')}
+      </div>
+    `;
+    return;
+  }
+
+  tickets.forEach(ticket => {
+    const card = document.createElement('div');
+    card.className = `ticket-card ${ticket.status === 'new' ? 'unread' : ''}`;
+
+    let statusPill = '';
+    if (ticket.status === 'new') {
+      statusPill = '<span class="ticket-status-pill status-new">● Новый</span>';
+    } else if (ticket.status === 'in_progress') {
+      statusPill = '<span class="ticket-status-pill status-in-progress">⏳ В обработке</span>';
+    } else {
+      statusPill = '<span class="ticket-status-pill status-resolved">✔ Решено</span>';
+    }
+
+    const catLabels = {
+      issue: '⚠️ Ошибка в конфигураторе',
+      compat: '🔍 Вопрос по совместимости',
+      order: '📦 Заказ / Стоимость',
+      suggest: '💡 Предложение деталей',
+      other: '💬 Другое обращение'
+    };
+    const catText = catLabels[ticket.category] || ticket.categoryName || 'Обращение';
+
+    card.innerHTML = `
+      <div class="ticket-top-row">
+        <span class="ticket-author">👤 ${escapeHtml(ticket.name)}</span>
+        <span class="ticket-date">🕒 ${escapeHtml(ticket.date || '')}</span>
+      </div>
+      <div class="ticket-contact">
+        📞 Связь: <b>${escapeHtml(ticket.contact)}</b>
+      </div>
+      <div style="margin: 6px 0;">
+        <span class="ticket-cat-tag">${catText}</span>
+        ${statusPill}
+      </div>
+      <div class="ticket-message">
+        ${escapeHtml(ticket.message)}
+      </div>
+      ${ticket.specs ? `
+        <div style="margin-top: 8px;">
+          <button type="button" class="btn-micro-action btn-toggle-specs" style="font-size:0.7rem; color:var(--neon-cyan);">📋 Показать/скрыть спецификацию ПК</button>
+          <pre class="ticket-specs-block" style="display:none; margin-top:6px;">${escapeHtml(ticket.specs)}</pre>
+        </div>
+      ` : ''}
+      <div class="ticket-actions-bar">
+        ${ticket.status !== 'resolved' ? `
+          <button type="button" class="btn-ticket-act btn-resolve" data-action="resolve" data-id="${ticket.id}">
+            ✔ Отметить решённым
+          </button>
+        ` : `
+          <button type="button" class="btn-ticket-act" data-action="new" data-id="${ticket.id}" style="color:#94a3b8; border-color:#475569;">
+            ↩ Вернуть в новые
+          </button>
+        `}
+        ${ticket.status !== 'in_progress' && ticket.status !== 'resolved' ? `
+          <button type="button" class="btn-ticket-act" data-action="in_progress" data-id="${ticket.id}" style="color:#f59e0b; border-color:rgba(245,158,11,0.4);">
+            ⏳ В обработку
+          </button>
+        ` : ''}
+        <button type="button" class="btn-ticket-act btn-delete-ticket" data-action="delete" data-id="${ticket.id}">
+          🗑️ Удалить
+        </button>
+      </div>
+    `;
+
+    // Toggle specs visibility
+    const specsBtn = card.querySelector('.btn-toggle-specs');
+    const specsPre = card.querySelector('.ticket-specs-block');
+    if (specsBtn && specsPre) {
+      specsBtn.addEventListener('click', () => {
+        const isHidden = specsPre.style.display === 'none';
+        specsPre.style.display = isHidden ? 'block' : 'none';
+        specsBtn.textContent = isHidden ? '✕ Скрыть спецификацию ПК' : '📋 Показать/скрыть спецификацию ПК';
+      });
+    }
+
+    // Action buttons
+    card.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        const ticketId = btn.dataset.id;
+        if (action === 'resolve') {
+          updateTicketStatus(ticketId, 'resolved');
+        } else if (action === 'new') {
+          updateTicketStatus(ticketId, 'new');
+        } else if (action === 'in_progress') {
+          updateTicketStatus(ticketId, 'in_progress');
+        } else if (action === 'delete') {
+          deleteTicket(ticketId);
+        }
+      });
+    });
+
+    container.appendChild(card);
+  });
+}
+
+function updateOwnerStats() {
+  const total = state.supportTickets.length;
+  const newCount = state.supportTickets.filter(t => t.status === 'new').length;
+  const resolvedCount = state.supportTickets.filter(t => t.status === 'resolved').length;
+
+  const totalEl = document.getElementById('statTotalTickets');
+  if (totalEl) totalEl.textContent = total;
+  const newEl = document.getElementById('statNewTickets');
+  if (newEl) newEl.textContent = newCount;
+  const resEl = document.getElementById('statResolvedTickets');
+  if (resEl) resEl.textContent = resolvedCount;
+}
+
+function updateTicketStatus(ticketId, newStatus) {
+  const ticket = state.supportTickets.find(t => t.id === ticketId);
+  if (!ticket) return;
+  ticket.status = newStatus;
+  saveSupportTickets();
+  renderOwnerTickets();
+  CyberSound.playSelect();
+  showToast(newStatus === 'resolved' ? 'Обращение помечено как решённое!' : 'Статус обращения обновлен.');
+}
+
+function deleteTicket(ticketId) {
+  state.supportTickets = state.supportTickets.filter(t => t.id !== ticketId);
+  saveSupportTickets();
+  renderOwnerTickets();
+  CyberSound.playRelayClick();
+  showToast('Обращение удалено из списка.');
+}
+
+function exportSupportTickets() {
+  if (state.supportTickets.length === 0) {
+    showToast('Список обращений пуст.');
+    return;
+  }
+  let report = `========================================================\n`;
+  report += `CYBER-LAB: ОТЧЕТ ПО ОБРАЩЕНИЯМ КЛИЕНТОВ (ВЛАДЕЛЕЦ)\n`;
+  report += `Дата выгрузки: ${new Date().toLocaleString()}\n`;
+  report += `Всего обращений: ${state.supportTickets.length}\n`;
+  report += `========================================================\n\n`;
+
+  state.supportTickets.forEach((t, idx) => {
+    report += `[#${idx + 1}] ДАТА: ${t.date} | СТАТУС: ${t.status.toUpperCase()}\n`;
+    report += `ИМЯ: ${t.name} | СВЯЗЬ: ${t.contact}\n`;
+    report += `КАТЕГОРИЯ: ${t.category}\n`;
+    report += `СООБЩЕНИЕ:\n${t.message}\n`;
+    if (t.specs) {
+      report += `ПРИКРЕПЛЕННАЯ СБОРКА:\n${t.specs}\n`;
+    }
+    report += `--------------------------------------------------------\n\n`;
+  });
+
+  const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cyberlab_support_tickets_${Date.now()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Список обращений экспортирован в TXT файл!');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function setupSupportAndOwnerListeners() {
+  // Support Button in Header
+  document.getElementById('navTabSupport')?.addEventListener('click', () => {
+    openModal('supportModal');
+  });
+
+  // Support Button in Bottom Utility Bar (User requested: "Cделай поддержку где то снизу")
+  document.getElementById('bottomSupportBtn')?.addEventListener('click', () => {
+    openModal('supportModal');
+  });
+
+  // Owner Badge Button in Header
+  document.getElementById('ownerPortalBtn')?.addEventListener('click', () => {
+    renderOwnerTickets();
+    openModal('ownerDashboardModal');
+  });
+
+  // Open Owner Login from Support Modal Footer
+  document.getElementById('openOwnerLoginBtn')?.addEventListener('click', () => {
+    closeModal('supportModal');
+    openModal('ownerLoginModal');
+  });
+
+  // Submit Support Ticket Form
+  document.getElementById('supportTicketForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nameInput = document.getElementById('supportUserName');
+    const contactInput = document.getElementById('supportUserContact');
+    const catInput = document.getElementById('supportCategory');
+    const msgInput = document.getElementById('supportMessage');
+    const attachCheck = document.getElementById('supportAttachSpecs');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const contact = contactInput ? contactInput.value.trim() : '';
+    const category = catInput ? catInput.value : 'issue';
+    const message = msgInput ? msgInput.value.trim() : '';
+    const attachSpecs = attachCheck ? attachCheck.checked : false;
+
+    if (!name || !contact || !message) {
+      showToast('Пожалуйста, заполните все обязательные поля!');
+      return;
+    }
+
+    const now = new Date();
+    const dateFormatted = `${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+    let specsSummary = null;
+    if (attachSpecs) {
+      specsSummary = generateBuildSummaryText();
+    }
+
+    const newTicket = {
+      id: 'ticket_' + Date.now(),
+      date: dateFormatted,
+      timestamp: Date.now(),
+      name,
+      contact,
+      category,
+      message,
+      specs: specsSummary,
+      status: 'new'
+    };
+
+    state.supportTickets.unshift(newTicket);
+    saveSupportTickets();
+
+    // Reset inputs
+    if (nameInput) nameInput.value = '';
+    if (contactInput) contactInput.value = '';
+    if (msgInput) msgInput.value = '';
+
+    closeModal('supportModal');
+    CyberSound.playSelect();
+
+    const lang = state.currentLang || 'uz';
+    const successMsg = lang === 'uz'
+      ? 'Murojaatingiz qabul qilindi! Tez orada mutaxassisimiz siz bilan bog‘lanadi.'
+      : (lang === 'en'
+        ? 'Support ticket submitted! Our specialist will contact you shortly.'
+        : 'Обращение в поддержку успешно отправлено! Мы свяжемся с вами в ближайшее время.');
+    showToast(successMsg);
+
+    // If owner dashboard is already active, refresh it
+    if (state.isOwner) {
+      renderOwnerTickets();
+    }
+  });
+
+  // Owner Login Form
+  document.getElementById('ownerLoginForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const passInput = document.getElementById('ownerPasswordInput');
+    const enteredPass = passInput ? passInput.value.trim() : '';
+
+    // Accepted passwords: admin, 7777, owner2026, root
+    const validCodes = ['admin', '7777', 'owner2026', 'root'];
+
+    if (validCodes.includes(enteredPass)) {
+      state.isOwner = true;
+      try {
+        localStorage.setItem(OWNER_AUTH_KEY, 'true');
+      } catch (e) {}
+
+      const badgeBtn = document.getElementById('ownerPortalBtn');
+      if (badgeBtn) badgeBtn.style.display = 'inline-flex';
+
+      if (passInput) passInput.value = '';
+      closeModal('ownerLoginModal');
+
+      renderOwnerTickets();
+      openModal('ownerDashboardModal');
+      CyberSound.playPreset();
+
+      showToast('👑 Вы успешно вошли как Владелец магазина!');
+    } else {
+      CyberSound.playWarning();
+      showToast('⚠️ Неверный пароль владельца! (По умолчанию: admin или 7777)');
+    }
+  });
+
+  // Owner Logout
+  document.getElementById('btnLogoutOwner')?.addEventListener('click', () => {
+    state.isOwner = false;
+    try {
+      localStorage.removeItem(OWNER_AUTH_KEY);
+    } catch (e) {}
+
+    const badgeBtn = document.getElementById('ownerPortalBtn');
+    if (badgeBtn) badgeBtn.style.display = 'none';
+
+    closeModal('ownerDashboardModal');
+    CyberSound.playRelayClick();
+    showToast('Вы вышли из учетной записи владельца.');
+  });
+
+  // Owner Dashboard Filter Tabs
+  document.querySelectorAll('.owner-tab-btn').forEach(tabBtn => {
+    tabBtn.addEventListener('click', () => {
+      document.querySelectorAll('.owner-tab-btn').forEach(b => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+      const filter = tabBtn.dataset.filterStatus || 'all';
+      renderOwnerTickets(filter);
+      CyberSound.playSelect();
+    });
+  });
+
+  // Owner Export Tickets
+  document.getElementById('btnExportTickets')?.addEventListener('click', () => {
+    exportSupportTickets();
+  });
+}
+
 let toastTimeout;
 function showToast(msg) {
   const toast = document.getElementById('cyberToast');
@@ -1927,6 +2467,14 @@ function setLanguage(lang) {
   if (navC) navC.textContent = t.tabCatalog;
   const navS = document.getElementById('txtNavSaved');
   if (navS) navS.textContent = t.tabSaved;
+  const navSup = document.getElementById('txtNavSupport');
+  if (navSup && t.navSupport) navSup.textContent = t.navSupport;
+  const botSup = document.getElementById('txtBottomSupport');
+  if (botSup && t.navSupport) botSup.textContent = t.navSupport;
+  const navOwn = document.getElementById('txtOwnerBadge');
+  if (navOwn && t.navOwner) navOwn.textContent = t.navOwner;
+  const supTitle = document.getElementById('txtSupportModalTitle');
+  if (supTitle && t.supportModalTitle) supTitle.textContent = t.supportModalTitle;
 
   const totalLbl = document.getElementById('txtTotalLabel');
   if (totalLbl) totalLbl.textContent = t.totalLabel;

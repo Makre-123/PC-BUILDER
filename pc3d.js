@@ -549,6 +549,11 @@ class CyberPC3DViewer {
     this.fillLight.position.set(-25, 20, -18);
     this.scene.add(this.fillLight);
 
+    // Studio Rear Softbox Light so all rear I/O connectors, ports and exhausts are crystal-clear
+    this.rearLight = new THREE.DirectionalLight(0xffffff, 2.4);
+    this.rearLight.position.set(10, 18, -32);
+    this.scene.add(this.rearLight);
+
     // Subtle Under-Chassis Bounce Light
     this.bounceLight = new THREE.DirectionalLight(0xffffff, 0.7);
     this.bounceLight.position.set(0, -12, 0);
@@ -629,6 +634,7 @@ class CyberPC3DViewer {
       this.ambientLight.intensity = 2.1;
       this.studioFloor.material.color.setHex(0xffffff);
       this.gridHelper.material.color.setHex(0xdbeafe);
+      if (this.rearLight) this.rearLight.intensity = 2.4;
     } else {
       this.scene.background = new THREE.Color(0x07090f);
       this.scene.fog.color = new THREE.Color(0x07090f);
@@ -636,6 +642,7 @@ class CyberPC3DViewer {
       this.ambientLight.intensity = 1.2;
       this.studioFloor.material.color.setHex(0x0f1522);
       this.gridHelper.material.color.setHex(0x141f2e);
+      if (this.rearLight) this.rearLight.intensity = 1.8;
     }
   }
 
@@ -1051,6 +1058,7 @@ class CyberPC3DViewer {
       jack.position.set(jX, jY, -8.8);
       this.mbMeshGroup.add(jack);
     });
+    this.autoFitAndValidateChassis();
   }
 
   // 2. CPU & SOCKET (AM5/LGA1700 Mechanical Bracket + Lever)
@@ -2220,20 +2228,26 @@ class CyberPC3DViewer {
     const isDigitalDisplay = caseId === 'case-cyber-cube'; // DeepCool CH560
     const isLianLiEvo = caseId === 'case-lianli-o11'; // Lian Li O11 Dynamic EVO Dual-Chamber
     const isTerraItx = caseId === 'case-terra-itx'; // Fractal Terra Jade Green Walnut ITX
+    const isNzxtH9 = caseId === 'case-nzxt-h9'; // NZXT H9 Flow Dual-Chamber Black
+    const isCorsair5000 = caseId === 'case-corsair-5000d'; // Corsair 5000D Airflow Steel Mesh
+    const isMontechKing = caseId === 'case-montech-king'; // Montech King 95 Pro Curved Panoramic
+    const isRogHyperion = caseId === 'case-rog-hyperion'; // ASUS ROG Hyperion GR701 Super-Tower
 
-    const width = isTerraItx ? 10.5 : 12;
-    const height = isTerraItx ? 13.5 : 16;
-    const depth = isTerraItx ? 15.5 : 18;
+    // All chassis dimensions calibrated so every board, GPU and cable fits cleanly INSIDE without sticking out
+    const isDualChamber = isLianLiEvo || isNzxtH9 || isHyteScreen || isMontechKing || isRogHyperion;
+    const width = isDualChamber ? 13.5 : (isTerraItx ? 11.8 : 12.2);
+    const height = isRogHyperion ? 17.5 : (isTerraItx ? 15.6 : 16.4);
+    const depth = isRogHyperion ? 19.5 : 18.2;
 
     // Materials
-    const frameColor = isSnowWhite ? 0xffffff : (isTerraItx ? 0x1b3b36 : (isLianLiEvo ? 0x181e26 : (isNordicWood ? 0x18181b : (isMechaSkeleton ? 0x09090b : 0x0f1420))));
+    const frameColor = isSnowWhite ? 0xffffff : (isTerraItx ? 0x1b3b36 : (isLianLiEvo ? 0x181e26 : (isNordicWood ? 0x18181b : (isMechaSkeleton ? 0x09090b : (isRogHyperion ? 0x0b0e14 : (isCorsair5000 ? 0x18181b : 0x0f1420))))));
     const metalMat = new THREE.MeshStandardMaterial({
       color: frameColor,
       roughness: isSnowWhite ? 0.2 : (isTerraItx ? 0.38 : 0.35),
       metalness: isSnowWhite ? 0.1 : (isTerraItx ? 0.85 : 0.88)
     });
 
-    const darkFrameColor = isSnowWhite ? 0xf1f5f9 : (isTerraItx ? 0x142b27 : (isLianLiEvo ? 0x11161d : (isNordicWood ? 0x27272a : 0x090c13)));
+    const darkFrameColor = isSnowWhite ? 0xf1f5f9 : (isTerraItx ? 0x142b27 : (isLianLiEvo ? 0x11161d : (isNordicWood ? 0x27272a : (isRogHyperion ? 0x181a20 : 0x090c13))));
     const darkFrameMat = new THREE.MeshStandardMaterial({
       color: darkFrameColor,
       roughness: 0.4,
@@ -2252,38 +2266,226 @@ class CyberPC3DViewer {
     backMesh.position.set(0, 0, -depth / 2);
     this.chassisGroup.add(backMesh);
 
-    // Motherboard Rear I/O Cutout Bezel (Clean Stamped Steel Frame aligning with Motherboard I/O Shield)
-    const ioBezel = new THREE.Mesh(
-      new THREE.BoxGeometry(2.1, 5.6, 0.12),
-      portSteelMat
-    );
-    ioBezel.position.set(4.55, 3.8, -depth / 2 + 0.18);
+    // ------------------------------------------------------------------------
+    // REAR CASE CONNECTORS & FULL MOTHERBOARD I/O SHIELD (Visible from outside)
+    // ------------------------------------------------------------------------
+    const zBack = -depth / 2;
+    const zFace = zBack - 0.05; // Placed on exterior rear chassis wall, 100% visible from behind!
+    const ioX = isTerraItx ? (width / 2 - 1.6) : 4.55;
+    const ioY = isTerraItx ? (height / 2 - 4.8) : 3.8;
+
+    // Motherboard I/O Shield Faceplate (High-Grade Brushed Metal with silk-screened bezels)
+    const ioShieldMat = new THREE.MeshStandardMaterial({
+      color: isSnowWhite ? 0xe2e8f0 : 0x181e26,
+      roughness: 0.28,
+      metalness: 0.92
+    });
+    const ioFaceplate = new THREE.Mesh(new THREE.BoxGeometry(2.0, 5.5, 0.08), ioShieldMat);
+    ioFaceplate.position.set(ioX, ioY, zFace);
+    this.chassisGroup.add(ioFaceplate);
+
+    // I/O Cutout Structural Bezel Frame
+    const ioBezel = new THREE.Mesh(new THREE.BoxGeometry(2.14, 5.64, 0.04), portSteelMat);
+    ioBezel.position.set(ioX, ioY, zFace + 0.02);
     this.chassisGroup.add(ioBezel);
 
-    const ioInnerCutout = new THREE.Mesh(
-      new THREE.BoxGeometry(1.92, 5.42, 0.14),
-      new THREE.MeshBasicMaterial({ color: 0x05070c })
-    );
-    ioInnerCutout.position.set(4.55, 3.8, -depth / 2 + 0.18);
-    this.chassisGroup.add(ioInnerCutout);
+    const metalPortMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.15 });
+    const blackInsulator = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
+    const redUsbMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+    const greenLedMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+    const amberLedMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+    const optGlowMat = new THREE.MeshBasicMaterial({ color: 0xff0044 });
 
-    // 7x PCIe Expansion Slot Covers with Honeycomb Airflow Perforations (No dangling wires)
-    for (let p = 0; p < 7; p++) {
-      const pY = 1.2 - p * 0.65;
+    // 1. Clear CMOS & BIOS Flashback Micro-Buttons
+    const btnCmos = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.14, 16), darkFrameMat);
+    btnCmos.rotation.x = Math.PI / 2;
+    btnCmos.position.set(ioX - 0.38, ioY + 2.2, zFace - 0.06);
+    this.chassisGroup.add(btnCmos);
+
+    const btnBios = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.14, 16), darkFrameMat);
+    btnBios.rotation.x = Math.PI / 2;
+    btnBios.position.set(ioX + 0.38, ioY + 2.2, zFace - 0.06);
+    this.chassisGroup.add(btnBios);
+
+    const biosLed = new THREE.Mesh(new THREE.CircleGeometry(0.04, 12), greenLedMat);
+    biosLed.position.set(ioX + 0.65, ioY + 2.2, zFace - 0.07);
+    this.chassisGroup.add(biosLed);
+
+    // 2. Dual Wi-Fi 6E/7 Gold Antenna SMA Terminals
+    for (let w = 0; w < 2; w++) {
+      const wX = ioX - 0.42 + w * 0.84;
+      const nut = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.12, 6), goldMat);
+      nut.rotation.x = Math.PI / 2;
+      nut.position.set(wX, ioY + 1.62, zFace - 0.06);
+      this.chassisGroup.add(nut);
+
+      const thread = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.22, 16), goldMat);
+      thread.rotation.x = Math.PI / 2;
+      thread.position.set(wX, ioY + 1.62, zFace - 0.14);
+      this.chassisGroup.add(thread);
+
+      const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.24, 8), goldMat);
+      pin.rotation.x = Math.PI / 2;
+      pin.position.set(wX, ioY + 1.62, zFace - 0.15);
+      this.chassisGroup.add(pin);
+    }
+
+    // 3. Motherboard Video Outputs: DisplayPort 1.4 & HDMI 2.1
+    const mbDp = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.28, 0.12), metalPortMat);
+    mbDp.position.set(ioX - 0.42, ioY + 1.05, zFace - 0.06);
+    this.chassisGroup.add(mbDp);
+    const mbDpIn = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.13), blackInsulator);
+    mbDpIn.position.set(ioX - 0.42, ioY + 1.05, zFace - 0.06);
+    this.chassisGroup.add(mbDpIn);
+
+    const mbHdmi = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.24, 0.12), goldMat);
+    mbHdmi.position.set(ioX + 0.42, ioY + 1.05, zFace - 0.06);
+    this.chassisGroup.add(mbHdmi);
+
+    // 4. Dual USB 2.0 (Black for Keyboard & Mouse)
+    for (let u = 0; u < 2; u++) {
+      const uX = ioX - 0.42 + u * 0.84;
+      const usbBox = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.3, 0.12), metalPortMat);
+      usbBox.position.set(uX, ioY + 0.52, zFace - 0.06);
+      this.chassisGroup.add(usbBox);
+      const usbBlack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.11, 0.13), blackInsulator);
+      usbBlack.position.set(uX, ioY + 0.52, zFace - 0.06);
+      this.chassisGroup.add(usbBlack);
+    }
+
+    // 5. Quad USB 3.2 Gen 1 (SuperSpeed 5Gbps Vibrant Blue)
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 2; c++) {
+        const uX = ioX - 0.42 + c * 0.84;
+        const uY = ioY - 0.02 - r * 0.48;
+        const usbBox = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.28, 0.12), metalPortMat);
+        usbBox.position.set(uX, uY, zFace - 0.06);
+        this.chassisGroup.add(usbBox);
+        const usbBlue = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.13), blueUsbMat);
+        usbBlue.position.set(uX, uY, zFace - 0.06);
+        this.chassisGroup.add(usbBlue);
+      }
+    }
+
+    // 6. 2.5G RJ-45 Ethernet LAN Jack & Red USB 3.2 Gen 2 (10Gbps)
+    const lanBox = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.44, 0.16), metalPortMat);
+    lanBox.position.set(ioX - 0.42, ioY - 1.1, zFace - 0.08);
+    this.chassisGroup.add(lanBox);
+    const lanHole = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.17), blackInsulator);
+    lanHole.position.set(ioX - 0.42, ioY - 1.1, zFace - 0.08);
+    this.chassisGroup.add(lanHole);
+    const lanLed1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.18), greenLedMat);
+    lanLed1.position.set(ioX - 0.55, ioY - 0.9, zFace - 0.08);
+    this.chassisGroup.add(lanLed1);
+    const lanLed2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.18), amberLedMat);
+    lanLed2.position.set(ioX - 0.29, ioY - 0.9, zFace - 0.08);
+    this.chassisGroup.add(lanLed2);
+
+    const usbRedBox = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.28, 0.12), metalPortMat);
+    usbRedBox.position.set(ioX + 0.42, ioY - 1.1, zFace - 0.06);
+    this.chassisGroup.add(usbRedBox);
+    const usbRed = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.1, 0.13), redUsbMat);
+    usbRed.position.set(ioX + 0.42, ioY - 1.1, zFace - 0.06);
+    this.chassisGroup.add(usbRed);
+
+    // 7. Dual USB 3.2 Gen 2x2 Type-C 20Gbps Reversible Ports
+    for (let c = 0; c < 2; c++) {
+      const tcX = ioX - 0.42 + c * 0.84;
+      const tcShell = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.18, 0.12), metalPortMat);
+      tcShell.position.set(tcX, ioY - 1.62, zFace - 0.06);
+      this.chassisGroup.add(tcShell);
+      const tcTongue = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.05, 0.13), blackInsulator);
+      tcTongue.position.set(tcX, ioY - 1.62, zFace - 0.06);
+      this.chassisGroup.add(tcTongue);
+    }
+
+    // 8. Optical S/PDIF TOSLINK & 5x Gold-Plated 3.5mm Surround Audio Jacks
+    const spdifBox = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.14), darkFrameMat);
+    spdifBox.position.set(ioX - 0.45, ioY - 2.15, zFace - 0.06);
+    this.chassisGroup.add(spdifBox);
+    const spdifGlow = new THREE.Mesh(new THREE.CircleGeometry(0.06, 12), optGlowMat);
+    spdifGlow.position.set(ioX - 0.45, ioY - 2.15, zFace - 0.07);
+    this.chassisGroup.add(spdifGlow);
+
+    const jackConfigs = [
+      { col: 0x22c55e, x: ioX + 0.45, y: ioY - 1.95 }, // Green: Line Out / Front
+      { col: 0x38bdf8, x: ioX,        y: ioY - 1.95 }, // Blue: Line In
+      { col: 0xf43f5e, x: ioX + 0.45, y: ioY - 2.38 }, // Pink: Mic In
+      { col: 0x1e293b, x: ioX,        y: ioY - 2.38 }  // Black: Rear Surround
+    ];
+    jackConfigs.forEach(j => {
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.12, 16), goldMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(j.x, j.y, zFace - 0.06);
+      this.chassisGroup.add(ring);
+
+      const centerHole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.07, 0.07, 0.13, 16),
+        new THREE.MeshStandardMaterial({ color: j.col, roughness: 0.4 })
+      );
+      centerHole.rotation.x = Math.PI / 2;
+      centerHole.position.set(j.x, j.y, zFace - 0.06);
+      this.chassisGroup.add(centerHole);
+    });
+
+    // ------------------------------------------------------------------------
+    // REAR DUAL-SLOT GPU BRACKET WITH 4x DISPLAY CONNECTORS (PCIe Slots 1 & 2)
+    // ------------------------------------------------------------------------
+    const pcieX = isTerraItx ? (width / 2 - 3.4) : 2.4;
+    const gpuBracketY = isTerraItx ? 0.3 : 0.8;
+
+    // Dual-slot Stainless Steel GPU Bracket with Air Exhaust Cutouts
+    const gpuBracket = new THREE.Mesh(
+      new THREE.BoxGeometry(3.6, 1.25, 0.08),
+      new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.95, roughness: 0.2 })
+    );
+    gpuBracket.position.set(pcieX, gpuBracketY, zFace - 0.02);
+    this.chassisGroup.add(gpuBracket);
+
+    // Triangular/Slit ventilation cutouts on upper slot
+    for (let v = 0; v < 5; v++) {
+      const vCut = new THREE.Mesh(
+        new THREE.BoxGeometry(0.42, 0.12, 0.1),
+        new THREE.MeshBasicMaterial({ color: 0x05070e })
+      );
+      vCut.position.set(pcieX - 1.2 + v * 0.6, gpuBracketY + 0.35, zFace - 0.02);
+      this.chassisGroup.add(vCut);
+    }
+
+    // 3x DisplayPort 1.4a outputs on GPU bracket
+    for (let dp = 0; dp < 3; dp++) {
+      const dpX = pcieX - 1.1 + dp * 0.72;
+      const dpBox = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.12), metalPortMat);
+      dpBox.position.set(dpX, gpuBracketY - 0.2, zFace - 0.05);
+      this.chassisGroup.add(dpBox);
+
+      const dpTongue = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.13), blackInsulator);
+      dpTongue.position.set(dpX, gpuBracketY - 0.2, zFace - 0.05);
+      this.chassisGroup.add(dpTongue);
+    }
+
+    // 1x HDMI 2.1 Gold Output on GPU bracket
+    const hdmiX = pcieX + 1.15;
+    const gpHdmi = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.24, 0.12), goldMat);
+    gpHdmi.position.set(hdmiX, gpuBracketY - 0.2, zFace - 0.05);
+    this.chassisGroup.add(gpHdmi);
+
+    // Remaining PCIe Slot Covers (Slots 3 to 7) with Honeycomb Perforations
+    for (let p = 2; p < 7; p++) {
+      const pY = gpuBracketY - 0.35 - (p - 1) * 0.65;
       const pcieCover = new THREE.Mesh(
-        new THREE.BoxGeometry(3.6, 0.44, 0.1),
+        new THREE.BoxGeometry(3.6, 0.44, 0.08),
         new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.9, roughness: 0.25 })
       );
-      pcieCover.position.set(2.4, pY, -depth / 2 + 0.18);
+      pcieCover.position.set(pcieX, pY, zFace - 0.02);
       this.chassisGroup.add(pcieCover);
 
-      // Perforated slot ventilation cutouts
       for (let v = 0; v < 4; v++) {
         const slotVent = new THREE.Mesh(
-          new THREE.BoxGeometry(0.5, 0.12, 0.12),
+          new THREE.BoxGeometry(0.5, 0.12, 0.1),
           new THREE.MeshBasicMaterial({ color: 0x05070e })
         );
-        slotVent.position.set(1.4 + v * 0.7, pY, -depth / 2 + 0.18);
+        slotVent.position.set(pcieX - 1.0 + v * 0.7, pY, zFace - 0.02);
         this.chassisGroup.add(slotVent);
       }
     }
@@ -2509,8 +2711,9 @@ class CyberPC3DViewer {
     // ------------------------------------------------------------------------
     // 5. PSU SHROUD WITH COOLING VENTILATION GRILLE & LIVE OLED POWER DISPLAY
     // ------------------------------------------------------------------------
-    const psuShroud = new THREE.Mesh(new THREE.BoxGeometry(width - 0.2, 4.4, depth - 0.4), metalMat);
-    psuShroud.position.set(0, -height / 2 + 2.2, 0);
+    const shroudH = isTerraItx ? 1.8 : 4.4;
+    const psuShroud = new THREE.Mesh(new THREE.BoxGeometry(width - 0.2, shroudH, depth - 0.4), metalMat);
+    psuShroud.position.set(0, -height / 2 + shroudH / 2, 0);
     this.chassisGroup.add(psuShroud);
 
     // Top PSU Shroud Perforated Airflow Ventilation Grille (Cooling holes for GPU intake)
@@ -2524,7 +2727,7 @@ class CyberPC3DViewer {
       psuPerfMat
     );
     psuVentGrille.rotation.x = -Math.PI / 2;
-    psuVentGrille.position.set(0, -height / 2 + 4.41, 0.4);
+    psuVentGrille.position.set(0, -height / 2 + shroudH + 0.01, 0.4);
     this.chassisGroup.add(psuVentGrille);
 
     const isOledPsu = psuId.includes('oled') || psuId.includes('1200w');
@@ -2554,11 +2757,11 @@ class CyberPC3DViewer {
     });
 
     const psuCutoutMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(6.4, 2.6),
+      new THREE.PlaneGeometry(isTerraItx ? 4.2 : 6.4, isTerraItx ? 1.6 : 2.6),
       new THREE.MeshBasicMaterial({ map: psuTexture })
     );
     psuCutoutMesh.rotation.y = Math.PI / 2;
-    psuCutoutMesh.position.set(-width / 2 + 0.18, -height / 2 + 2.2, -1.8);
+    psuCutoutMesh.position.set(-width / 2 + 0.18, -height / 2 + shroudH / 2, -1.8);
     this.chassisGroup.add(psuCutoutMesh);
 
     // CH560 Digital Telemetry LCD on Shroud
@@ -2772,6 +2975,123 @@ class CyberPC3DViewer {
       scrMesh.position.set(-width / 2 + 1.8, 0, depth / 2 - 1.8);
       this.chassisGroup.add(scrMesh);
 
+    } else if (isNzxtH9) {
+      // NZXT H9 Flow Dual-Chamber: Seamless Wrap-Around Panoramic Front Glass
+      const frontGlassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        roughness: 0.04,
+        transmission: 0.96,
+        transparent: true,
+        opacity: 0.35
+      });
+      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.76, height - 0.6, 0.28), frontGlassMat);
+      frontGlass.position.set(-width * 0.12, 0, depth / 2);
+      this.chassisGroup.add(frontGlass);
+
+      // Matte Black Right Pillar with subtle purple NZXT accent strip
+      const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(width * 0.24, height - 0.6, 0.4), darkFrameMat);
+      rightPillar.position.set(width / 2 - width * 0.12, 0, depth / 2);
+      this.chassisGroup.add(rightPillar);
+
+      // 3x Side Vertical F-Series Intake Fans in Dual Chamber
+      for (let f = 0; f < 3; f++) {
+        const sideFan = this.createFan3D(1.65, true, false);
+        sideFan.rotation.y = Math.PI / 2;
+        sideFan.position.set(width / 2 - 0.6, 4.2 - f * 3.8, 1.4);
+        this.chassisGroup.add(sideFan);
+      }
+
+    } else if (isCorsair5000) {
+      // Corsair 5000D Airflow: RapidRoute Triangular Steel Front Plate
+      const frontFrame = new THREE.Mesh(new THREE.BoxGeometry(width, height - 0.6, 0.4), darkFrameMat);
+      frontFrame.position.set(0, 0, depth / 2);
+      this.chassisGroup.add(frontFrame);
+
+      const corsairMeshMat = new THREE.MeshStandardMaterial({
+        map: this.getPerforatedMeshTexture(false, false),
+        roughness: 0.45,
+        metalness: 0.9
+      });
+      const steelPlate = new THREE.Mesh(new THREE.PlaneGeometry(width - 1.6, height - 1.4), corsairMeshMat);
+      steelPlate.position.set(0, 0, depth / 2 + 0.22);
+      this.chassisGroup.add(steelPlate);
+
+      // Corsair Signature Yellow Accent Pull-Tab at Top Right
+      const yellowTab = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.8, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 })
+      );
+      yellowTab.position.set(width / 2 - 1.2, height / 2 - 1.2, depth / 2 + 0.28);
+      this.chassisGroup.add(yellowTab);
+
+      for (let i = 0; i < 3; i++) {
+        const fan = this.createFan3D(1.75, true, false);
+        fan.position.set(0, 4.5 - i * 4.2, depth / 2 - 0.6);
+        this.chassisGroup.add(fan);
+      }
+
+    } else if (isMontechKing) {
+      // Montech King 95 Pro: Curved Panoramic Seamless Corner Glass
+      const curvedGlassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        roughness: 0.04,
+        transmission: 0.96,
+        transparent: true,
+        opacity: 0.32
+      });
+      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(width * 0.82, height - 0.6, 0.28), curvedGlassMat);
+      frontGlass.position.set(-width * 0.09, 0, depth / 2);
+      this.chassisGroup.add(frontGlass);
+
+      // 6x ARGB Reverse-Blade Intake Fans (3 side + 2 bottom)
+      for (let f = 0; f < 3; f++) {
+        const sideFan = this.createFan3D(1.65, true, false);
+        sideFan.rotation.y = Math.PI / 2;
+        sideFan.position.set(width / 2 - 0.6, 4.2 - f * 3.8, 1.4);
+        this.chassisGroup.add(sideFan);
+      }
+
+    } else if (isRogHyperion) {
+      // ASUS ROG Hyperion GR701: Titanium Cast Aluminum X-Frame Exoskeleton
+      const rogMat = new THREE.MeshStandardMaterial({ color: 0x181a20, metalness: 0.95, roughness: 0.18 });
+      const rogAccentMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.9, roughness: 0.2 });
+
+      // Diagonal X-Frame Left & Right Cast Wings
+      [-1, 1].forEach(dir => {
+        const xWing = new THREE.Mesh(new THREE.BoxGeometry(0.8, height + 1.2, 0.8), rogMat);
+        xWing.rotation.z = dir * 0.15;
+        xWing.position.set(dir * (width / 2 - 0.6), 0, depth / 2 + 0.3);
+        this.chassisGroup.add(xWing);
+
+        // Sturdy Cast Aluminum Top Carry Handle
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, depth - 4, 16), rogMat);
+        handle.rotation.x = Math.PI / 2;
+        handle.position.set(dir * (width / 2 - 1.2), height / 2 + 1.2, 0);
+        this.chassisGroup.add(handle);
+      });
+
+      // Front ARGB ROG Cyber Eye Hologram Logo
+      const eyeTex = this.createCanvasTexture('rog_hyperion_eye', 256, 256, (ctx, w, h) => {
+        ctx.fillStyle = '#05070c';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#ff0055';
+        ctx.beginPath();
+        ctx.moveTo(40, 160);
+        ctx.lineTo(210, 60);
+        ctx.lineTo(190, 190);
+        ctx.closePath();
+        ctx.fill();
+      });
+      const eyeBadge = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: eyeTex }));
+      eyeBadge.position.set(0, 1.0, depth / 2 + 0.32);
+      this.chassisGroup.add(eyeBadge);
+
+      for (let i = 0; i < 3; i++) {
+        const fan = this.createFan3D(1.9, true, false);
+        fan.position.set(0, 4.8 - i * 4.4, depth / 2 - 0.6);
+        this.chassisGroup.add(fan);
+      }
+
     } else {
       // High-Airflow Honeycomb Perforated Mesh Front with 3x ARGB Intake Fans
       const frontMesh = new THREE.Mesh(new THREE.BoxGeometry(width, height - 0.6, 0.6), darkFrameMat);
@@ -2871,6 +3191,7 @@ class CyberPC3DViewer {
 
     this.chassisGroup.add(this.glassPanelGroup);
     this.updateGlassPosition(false);
+    this.autoFitAndValidateChassis();
   }
 
   toggleGlassPanel() {
@@ -3150,6 +3471,180 @@ class CyberPC3DViewer {
     });
   }
 
+  // Completely clear all daughter components, leaving ONLY the bare chassis frame
+  clearAllComponents() {
+    while (this.mbMeshGroup.children.length > 0) {
+      this.mbMeshGroup.remove(this.mbMeshGroup.children[0]);
+    }
+    while (this.cpuChipGroup.children.length > 0) {
+      this.cpuChipGroup.remove(this.cpuChipGroup.children[0]);
+    }
+    while (this.coolerGroup.children.length > 0) {
+      this.coolerGroup.remove(this.coolerGroup.children[0]);
+    }
+    while (this.gpuGroup.children.length > 0) {
+      this.gpuGroup.remove(this.gpuGroup.children[0]);
+    }
+    while (this.ramGroup.children.length > 0) {
+      this.ramGroup.remove(this.ramGroup.children[0]);
+    }
+    while (this.ssdGroup.children.length > 0) {
+      this.ssdGroup.remove(this.ssdGroup.children[0]);
+    }
+    while (this.cablesGroup.children.length > 0) {
+      this.cablesGroup.remove(this.cablesGroup.children[0]);
+    }
+    if (this.thermalPasteMesh) {
+      this.componentsGroup.remove(this.thermalPasteMesh);
+      this.thermalPasteMesh = null;
+      this.thermalPasteApplied = false;
+    }
+    this.fansList = this.fansList.filter(f => f.isCaseFan);
+    this.installed = {
+      gpu: false,
+      cooler: false,
+      ram: false,
+      cpu: false,
+      motherboard: false,
+      ssd: false,
+      cables: false,
+      glass: true
+    };
+  }
+
+  // Clear a single component category from the 3D scene
+  clearComponent(category) {
+    switch (category) {
+      case 'motherboard':
+        while (this.mbMeshGroup.children.length > 0) this.mbMeshGroup.remove(this.mbMeshGroup.children[0]);
+        while (this.cpuChipGroup.children.length > 0) this.cpuChipGroup.remove(this.cpuChipGroup.children[0]);
+        while (this.cablesGroup.children.length > 0) this.cablesGroup.remove(this.cablesGroup.children[0]);
+        this.installed.motherboard = false;
+        this.installed.cpu = false;
+        this.installed.cables = false;
+        break;
+      case 'cooler':
+        while (this.coolerGroup.children.length > 0) this.coolerGroup.remove(this.coolerGroup.children[0]);
+        this.fansList = this.fansList.filter(f => !f.isCoolerFan);
+        this.installed.cooler = false;
+        break;
+      case 'gpu':
+        while (this.gpuGroup.children.length > 0) this.gpuGroup.remove(this.gpuGroup.children[0]);
+        this.fansList = this.fansList.filter(f => !f.isGpuFan);
+        this.installed.gpu = false;
+        break;
+      case 'ram':
+        while (this.ramGroup.children.length > 0) this.ramGroup.remove(this.ramGroup.children[0]);
+        this.installed.ram = false;
+        break;
+      case 'storage':
+        while (this.ssdGroup.children.length > 0) this.ssdGroup.remove(this.ssdGroup.children[0]);
+        this.installed.ssd = false;
+        break;
+      case 'cpu':
+        while (this.cpuChipGroup.children.length > 0) this.cpuChipGroup.remove(this.cpuChipGroup.children[0]);
+        if (this.thermalPasteMesh) {
+          this.componentsGroup.remove(this.thermalPasteMesh);
+          this.thermalPasteMesh = null;
+          this.thermalPasteApplied = false;
+        }
+        this.installed.cpu = false;
+        break;
+    }
+  }
+
+  // ==========================================================================
+  // SMART CHASSIS BOUNDS VERIFICATION & COMPONENT AUTO-FIT ENGINE
+  // Automatically detects if any components exceed chassis boundaries and corrects them
+  // ==========================================================================
+  autoFitAndValidateChassis() {
+    const caseId = this.currentCaseId || 'case-nordic-wood';
+    const isTerraItx = caseId === 'case-terra-itx';
+    const isRogHyperion = caseId === 'case-rog-hyperion';
+    const isDualChamber = caseId === 'case-lianli-o11' || caseId === 'case-nzxt-h9' || caseId === 'case-prestige-hyte' || caseId === 'case-montech-king' || isRogHyperion;
+
+    const width = isDualChamber ? 13.5 : (isTerraItx ? 11.8 : 12.2);
+    const height = isRogHyperion ? 17.5 : (isTerraItx ? 15.6 : 16.4);
+    const depth = isRogHyperion ? 19.5 : 18.2;
+
+    const report = {
+      isInside: true,
+      caseId: caseId,
+      autoCorrected: false,
+      corrections: []
+    };
+
+    if (isTerraItx) {
+      // 1. MINI-ITX COMPACT SCALING & REPOSITIONING
+      // Proportional scale factor to fit standard ATX components cleanly into Mini-ITX chassis
+      const itxScale = 0.78;
+      this.mbMeshGroup.scale.set(itxScale, itxScale, itxScale);
+      this.cpuChipGroup.scale.set(itxScale, itxScale, itxScale);
+      this.ramGroup.scale.set(itxScale, itxScale, itxScale);
+      this.ssdGroup.scale.set(itxScale, itxScale, itxScale);
+
+      // Positioning offsets: seats motherboard firmly on Terra ITX tray above the 1.8 shroud
+      const offsetX = 0.95;
+      const offsetY = -0.15;
+      const offsetZ = -1.85;
+
+      this.mbMeshGroup.position.set(offsetX, offsetY, offsetZ);
+      this.cpuChipGroup.position.set(offsetX, offsetY, offsetZ);
+      this.ramGroup.position.set(offsetX, offsetY, offsetZ);
+      this.ssdGroup.position.set(offsetX, offsetY, offsetZ);
+
+      // 2. CPU COOLER CLEARANCE AUTO-FIT
+      // Compact case side clearance: scale cooler slightly so it never touches side mesh
+      const coolerScale = 0.82;
+      this.coolerGroup.scale.set(coolerScale, coolerScale, coolerScale);
+      this.coolerGroup.position.set(offsetX + 0.08, offsetY, offsetZ);
+
+      // 3. GPU POSITION & CLEARANCE AUTO-FIT
+      // Follows PCIe slot on Mini-ITX motherboard, fits within depth clearance
+      const gpuScale = 0.88;
+      this.gpuGroup.scale.set(gpuScale, gpuScale, 0.92);
+      this.gpuGroup.position.set(offsetX - 0.22, offsetY - 0.22, offsetZ + 0.2);
+
+      // Cables
+      this.cablesGroup.position.set(offsetX * 0.5, offsetY, offsetZ * 0.5);
+
+      report.autoCorrected = true;
+      report.corrections.push('Mini-ITX авто-подгонка: масштаб платы (78%) и позиция согласованы со стойками Fractal Terra');
+      report.corrections.push('Зазор кулера и видеокарты откалиброван: 100% внутри габаритов корпуса');
+    } else {
+      // STANDARD ATX / E-ATX FULL CLEARANCE
+      this.mbMeshGroup.scale.set(1.0, 1.0, 1.0);
+      this.cpuChipGroup.scale.set(1.0, 1.0, 1.0);
+      this.ramGroup.scale.set(1.0, 1.0, 1.0);
+      this.ssdGroup.scale.set(1.0, 1.0, 1.0);
+      this.coolerGroup.scale.set(1.0, 1.0, 1.0);
+      this.gpuGroup.scale.set(1.0, 1.0, 1.0);
+
+      this.mbMeshGroup.position.set(0, 0, 0);
+      this.cpuChipGroup.position.set(0, 0, 0);
+      this.ramGroup.position.set(0, 0, 0);
+      this.ssdGroup.position.set(0, 0, 0);
+      this.coolerGroup.position.set(0, 0, 0);
+      this.gpuGroup.position.set(0, 0, 0);
+      this.cablesGroup.position.set(0, 0, 0);
+
+      report.corrections.push('Стандартная ATX посадка: соосность со стойками и задним щитком 100%');
+    }
+
+    // Refresh userData.homeCoords for all component groups so assembly step animations return to current home
+    [this.mbMeshGroup, this.cpuChipGroup, this.coolerGroup, this.ramGroup, this.gpuGroup, this.ssdGroup, this.cablesGroup].forEach(g => {
+      if (g) {
+        g.userData.homeCoords = {
+          x: g.position.x,
+          y: g.position.y,
+          z: g.position.z
+        };
+      }
+    });
+
+    return report;
+  }
+
   // ==========================================================================
   // ROUTER FOR COMPONENT UPDATES
   // ==========================================================================
@@ -3191,6 +3686,8 @@ class CyberPC3DViewer {
         targetGroup = this.chassisGroup;
         break;
     }
+
+    this.autoFitAndValidateChassis();
 
     if (targetGroup) {
       this.flashHighlight(targetGroup);

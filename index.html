@@ -56,6 +56,10 @@
           <span id="txtNavSaved">Mening Terilmalarim</span>
           <span class="nav-badge-count" id="navSavedCount">0</span>
         </button>
+        <button id="ownerPortalBtn" class="nav-page-btn owner-badge-btn" data-modal="ownerDashboardModal" style="display: none;" title="Egasi boshqaruv paneli / Панель владельца">
+          <span class="nav-tab-icon">👑</span>
+          <span id="txtOwnerBadge">Egasi</span>
+        </button>
       </nav>
 
       <!-- Live Compatibility, Price & Audio Toggle -->
@@ -781,9 +785,165 @@
   </div>
 
   <!-- ========================================================================
+       MODAL: USER SUPPORT & BUG REPORTS / ТЕХПОДДЕРЖКА
+       ======================================================================== -->
+  <div id="supportModal" class="cyber-modal-backdrop">
+    <div class="cyber-modal-box">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span id="txtSupportModalTitle">Служба поддержки Cyber-Lab</span>
+        </div>
+        <button class="modal-close-btn" data-close-modal="supportModal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 14px;" id="txtSupportDesc">
+          Возникли неполадки в сборке, вопрос по совместимости или предложение? Напишите нам, и наша команда свяжется с вами в кратчайшие сроки!
+        </p>
+
+        <form id="supportTicketForm" class="support-form">
+          <div class="support-field-group">
+            <label class="support-label" id="txtSupportNameLabel">Ваше имя / Никнейм:</label>
+            <input type="text" id="supportUserName" class="support-input" placeholder="Например: Алишер" required>
+          </div>
+
+          <div class="support-field-group">
+            <label class="support-label" id="txtSupportContactLabel">Контакт для связи (Telegram / Телефон / Email):</label>
+            <input type="text" id="supportUserContact" class="support-input" placeholder="@username или +998 90 123-45-67" required>
+          </div>
+
+          <div class="support-field-group">
+            <label class="support-label" id="txtSupportCatLabel">Тема обращения:</label>
+            <select id="supportCategory" class="support-select">
+              <option value="issue">⚠️ Неполадка в работе конфигуратора</option>
+              <option value="compat">🔍 Вопрос по совместимости комплектующих</option>
+              <option value="order">📦 Вопрос по заказу / стоимости сборки</option>
+              <option value="suggest">💡 Предложение новых деталей</option>
+              <option value="other">💬 Другое обращение / Отзыв</option>
+            </select>
+          </div>
+
+          <div class="support-field-group">
+            <label class="support-label" id="txtSupportMsgLabel">Подробное описание:</label>
+            <textarea id="supportMessage" class="support-textarea" placeholder="Опишите возникшую проблему или вопрос подробно..." required></textarea>
+          </div>
+
+          <label class="support-checkbox-row">
+            <input type="checkbox" id="supportAttachSpecs" checked>
+            <span id="txtSupportAttach">Прикрепить текущую конфигурацию ПК к сообщению</span>
+          </label>
+
+          <button type="submit" id="btnSubmitTicket" class="btn-cyber btn-preset-optimal" style="width: 100%; margin-top: 6px;">
+            🚀 Отправить обращение в поддержку
+          </button>
+        </form>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button id="openOwnerLoginBtn" class="btn-micro-action" style="font-size: 0.72rem; color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">
+          🔐 Вход для владельца
+        </button>
+        <button class="btn-cyber" data-close-modal="supportModal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: OWNER / ADMIN LOGIN (АВТОРИЗАЦИЯ ВЛАДЕЛЬЦА)
+       ======================================================================== -->
+  <div id="ownerLoginModal" class="cyber-modal-backdrop">
+    <div class="cyber-modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>👑 Вход в аккаунт владельца</span>
+        </div>
+        <button class="modal-close-btn" data-close-modal="ownerLoginModal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="color: #94a3b8; font-size: 0.84rem; margin-bottom: 12px;">
+          Введите пароль владельца, чтобы получить доступ к чтению и обработке всех жалоб и обращений клиентов.
+        </p>
+
+        <form id="ownerLoginForm" class="support-form">
+          <div class="support-field-group">
+            <label class="support-label">Пароль / PIN владельца:</label>
+            <input type="password" id="ownerPasswordInput" class="support-input" placeholder="Введите пароль..." autocomplete="current-password" required>
+            <span style="font-size: 0.7rem; color: #64748b; margin-top: 2px;">(Код доступа по умолчанию: admin или 7777)</span>
+          </div>
+
+          <button type="submit" class="btn-cyber btn-preset-prestige" style="width: 100%; margin-top: 8px;">
+            🔓 Авторизоваться как Владелец
+          </button>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cyber" data-close-modal="ownerLoginModal">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL: OWNER DASHBOARD (ПАНЕЛЬ УПРАВЛЕНИЯ ЖАЛОБАМИ И ОБРАЩЕНИЯМИ)
+       ======================================================================== -->
+  <div id="ownerDashboardModal" class="cyber-modal-backdrop">
+    <div class="cyber-modal-box owner-modal-box">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #fbbf24;">
+          <span>👑 Панель владельца: Обращения и жалобы клиентов</span>
+        </div>
+        <button class="modal-close-btn" data-close-modal="ownerDashboardModal">&times;</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column;">
+        <!-- Top Stats Row -->
+        <div class="owner-dashboard-header">
+          <div class="owner-counters">
+            <span class="owner-stat-chip">Всего: <b id="statTotalTickets">0</b></span>
+            <span class="owner-stat-chip new-chip">Новые: <b id="statNewTickets">0</b></span>
+            <span class="owner-stat-chip resolved-chip">Решённые: <b id="statResolvedTickets">0</b></span>
+          </div>
+
+          <!-- Status Filter Tabs -->
+          <div class="owner-filter-tabs">
+            <button class="owner-tab-btn active" data-filter-status="all">Все</button>
+            <button class="owner-tab-btn" data-filter-status="new">Новые</button>
+            <button class="owner-tab-btn" data-filter-status="resolved">Решённые</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Tickets Feed -->
+        <div class="owner-tickets-scroll" id="ownerTicketsContainer">
+          <!-- Populated dynamically via script.js -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div style="display: flex; gap: 8px;">
+          <button id="btnExportTickets" class="btn-cyber">📥 Экспорт списка</button>
+          <button id="btnLogoutOwner" class="btn-cyber" style="border-color: #ef4444; color: #ef4444;">🚪 Выйти</button>
+        </div>
+        <button class="btn-cyber" data-close-modal="ownerDashboardModal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
        BOTTOM FLOATING UTILITY BAR: AUDIO FX & LANGUAGE SWITCHER
        ======================================================================== -->
   <aside class="bottom-utility-bar" id="bottomUtilityBar" title="Sozlamalar va til / Настройки и язык">
+    <!-- User Support Quick Button / Поддержка -->
+    <button id="bottomSupportBtn" class="btn-utility-support" data-modal="supportModal" title="Yordam va Shikoyatlar / Поддержка / Support">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span id="txtBottomSupport">Поддержка</span>
+    </button>
+
     <!-- Sound FX Toggle Button -->
     <button id="soundToggleBtn" class="btn-utility-sound" title="Ovoz effektlari / Звуковые эффекты / Sound FX" aria-label="Ovoz effektlari">
       <svg id="soundIconOn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

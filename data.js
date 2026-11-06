@@ -62,6 +62,9 @@ const I18N = {
     partSsd: 'SSD',
     partCables: 'Кабели',
     partGlass: 'Стекло',
+    navSupport: 'Поддержка',
+    navOwner: 'Владелец',
+    supportModalTitle: 'Служба поддержки Cyber-Lab',
     categories: {
       case: 'Корпус',
       motherboard: 'Материнская плата',
@@ -148,6 +151,9 @@ const I18N = {
     partSsd: 'SSD',
     partCables: 'Simlar',
     partGlass: 'Oyna',
+    navSupport: 'Yordam',
+    navOwner: 'Egasi',
+    supportModalTitle: 'Cyber-Lab Texnik Yordami',
     categories: {
       case: 'Korpus',
       motherboard: 'Ona plata',
@@ -234,6 +240,9 @@ const I18N = {
     partSsd: 'SSD',
     partCables: 'Cables',
     partGlass: 'Glass',
+    navSupport: 'Support',
+    navOwner: 'Owner',
+    supportModalTitle: 'Cyber-Lab Support Desk',
     categories: {
       case: 'Case',
       motherboard: 'Motherboard',
@@ -374,6 +383,54 @@ const PC_DATA = {
         badge: 'Бутик Mini-ITX',
         color: 'jade-walnut',
         desc: 'Компактный шедевр 10.4L из анодированного изумрудного алюминия с акцентной панелью из натурального ореха.'
+      },
+      {
+        id: 'case-nzxt-h9',
+        name: 'NZXT H9 Flow Dual-Chamber Black',
+        type: 'panoramic-dual',
+        fans: '4x 120mm Quiet F-Series Fans',
+        glass: 'Бесшовное панорамное закаленное стекло',
+        price: 2450000,
+        tier: 'high',
+        badge: 'NZXT Flow Панорама',
+        color: 'matte-black',
+        desc: 'Двухкамерный ультра-продуваемый корпус с непрерывным стеклом без стойки и поддержкой до 10 вентиляторов.'
+      },
+      {
+        id: 'case-corsair-5000d',
+        name: 'Corsair 5000D Airflow Steel Mesh',
+        type: 'steel-airflow',
+        fans: '2x 120mm AirGuide + Скрытый кабель-канал',
+        glass: 'Тонированное закаленное стекло',
+        price: 2150000,
+        tier: 'mid',
+        badge: 'RapidRoute Steel',
+        color: 'graphite-black',
+        desc: 'Премиальная стальная передняя панель с оптимизированным воздушным потоком и удобным скрытым кабель-каналом.'
+      },
+      {
+        id: 'case-montech-king',
+        name: 'Montech King 95 Pro Curved Panoramic',
+        type: 'curved-glass',
+        fans: '6x ARGB PWM Реверсивных кулеров',
+        glass: 'Изогнутое бесшовное 4мм стекло',
+        price: 1950000,
+        tier: 'mid',
+        badge: 'Изогнутое Стекло',
+        color: 'obsidian-black',
+        desc: 'Инновационное изогнутое термоформованное стекло с полным обзором и 6 тихими реверсивными кулерами в комплекте.'
+      },
+      {
+        id: 'case-rog-hyperion',
+        name: 'ASUS ROG Hyperion GR701 Super-Tower',
+        type: 'hyperion-flagship',
+        fans: '4x 140mm ROG PWM + Встроенный держатель GPU',
+        glass: 'Двойное тонированное крыло-стекло',
+        price: 6850000,
+        tier: 'prestige',
+        badge: 'Титанический Флагман',
+        color: 'rog-stealth-black',
+        desc: 'Титанический супер-тауэр из литого алюминия X-Frame с поддержкой двух 420-мм радиаторов СЖО и быстрой зарядкой 60W Type-C.'
       }
     ],
 
@@ -456,6 +513,58 @@ const PC_DATA = {
         tier: 'prestige',
         badge: 'Ultra Prestige',
         desc: 'Матричный Polymo-дисплей на защитном кожухе, два порта USB4 40Gbps.'
+      },
+      {
+        id: 'mb-b650-tomahawk',
+        name: 'MSI MAG B650 TOMAHAWK WIFI',
+        brand: 'MSI',
+        socket: 'AM5',
+        ramType: 'DDR5',
+        chipset: 'AMD B650',
+        formFactor: 'ATX',
+        price: 3100000,
+        tier: 'mid',
+        badge: 'Народный AM5 Топ',
+        desc: 'Сверхнадёжная материнская плата с массивными тёмными радиаторами Extended Heatsink и 14+2+1 фазами 80A SPS.'
+      },
+      {
+        id: 'mb-b760-tuf',
+        name: 'ASUS TUF Gaming B760-PLUS WiFi DDR5',
+        brand: 'ASUS',
+        socket: 'LGA1700',
+        ramType: 'DDR5',
+        chipset: 'Intel B760',
+        formFactor: 'ATX',
+        price: 2650000,
+        tier: 'mid',
+        badge: 'TUF Military',
+        desc: 'Военный класс надежности TUF Components, усиленный слот PCIe 5.0 SafeSlot и скоростной Wi-Fi 6.'
+      },
+      {
+        id: 'mb-z790-godlike',
+        name: 'MSI MEG Z790 GODLIKE MAX Touch',
+        brand: 'MSI',
+        socket: 'LGA1700',
+        ramType: 'DDR5',
+        chipset: 'Intel Z790',
+        formFactor: 'E-ATX',
+        price: 13900000,
+        tier: 'prestige',
+        badge: 'M-Vision Сенсор',
+        desc: 'Ультимативный флагман планеты с цветным сенсорным 4.5" IPS дисплеем M-Vision Dashboard и 26+2 фазами питания.'
+      },
+      {
+        id: 'mb-x670e-taichi',
+        name: 'ASRock X670E Taichi Carrara Marble',
+        brand: 'ASRock',
+        socket: 'AM5',
+        ramType: 'DDR5',
+        chipset: 'AMD X670E',
+        formFactor: 'E-ATX',
+        price: 7450000,
+        tier: 'high',
+        badge: 'Каррарский Мрамор',
+        desc: 'Белоснежная мраморная текстура Carrara Marble, золотые вращающиеся шестерни Taichi и поддержка PCIe 5.0 NVMe.'
       }
     ],
 
@@ -572,6 +681,62 @@ const PC_DATA = {
         score: 100,
         badge: 'Флагман 6.2 ГГц',
         desc: 'Бескомпромиссная мощь для 4K гейминга и экстремального рендеринга.'
+      },
+      {
+        id: 'cpu-r7-5700x3d',
+        name: 'AMD Ryzen 7 5700X3D',
+        brand: 'AMD',
+        price: 2950000,
+        socket: 'AM4',
+        cores: '8 ядер / 16 потоков + 96MB V-Cache',
+        freq: '3.0 - 4.1 ГГц',
+        tdp: 105,
+        tier: 'mid',
+        score: 88,
+        badge: 'AM4 3D Хит',
+        desc: 'Второе дыхание для платформы AM4 с гигантским 3D кэшем, опережающим обычные процессоры в играх.'
+      },
+      {
+        id: 'cpu-i5-13400f',
+        name: 'Intel Core i5-13400F',
+        brand: 'Intel',
+        price: 2350000,
+        socket: 'LGA1700',
+        cores: '10 ядер (6P + 4E) / 16 потоков',
+        freq: '2.5 - 4.6 ГГц',
+        tdp: 65,
+        tier: 'mid',
+        score: 76,
+        badge: '10 Ядер Баланс',
+        desc: 'Сбалансированный гибридный 10-ядерник Raptor Lake для уверенного гейминга и многозадачности.'
+      },
+      {
+        id: 'cpu-i7-13700kf',
+        name: 'Intel Core i7-13700KF',
+        brand: 'Intel',
+        price: 4750000,
+        socket: 'LGA1700',
+        cores: '16 ядер (8P + 8E) / 24 потока',
+        freq: '3.4 - 5.4 ГГц',
+        tdp: 125,
+        tier: 'high',
+        score: 93,
+        badge: '16 Ядер Мощь',
+        desc: 'Мощный флагман с 8 производительными ядрами Raptor Cove для тяжелых игр и рендеринга.'
+      },
+      {
+        id: 'cpu-r9-9950x',
+        name: 'AMD Ryzen 9 9950X Zen 5 Flagship',
+        brand: 'AMD',
+        price: 9450000,
+        socket: 'AM5',
+        cores: '16 ядер / 32 потока Zen 5 (4nm)',
+        freq: '4.3 - 5.7 ГГц',
+        tdp: 170,
+        tier: 'prestige',
+        score: 105,
+        badge: '32 Потока Монстр',
+        desc: 'Новейший процессор микроархитектуры Zen 5 с 16 мощными ядрами — абсолютный чемпион в рендеринге и кодировании.'
       }
     ],
 
@@ -636,6 +801,54 @@ const PC_DATA = {
         tier: 'prestige',
         badge: 'LCD Дисплей',
         desc: 'Премиум СВО с экраном реального времени для графиков температуры и GIF.'
+      },
+      {
+        id: 'cooler-nh-d15',
+        name: 'Noctua NH-D15 chromax.black',
+        type: 'air-dual',
+        price: 1550000,
+        maxTdp: 260,
+        fans: '2x 140mm NF-A15 PWM',
+        noise: '24 dB',
+        tier: 'high',
+        badge: 'Австрийская Легенда',
+        desc: 'Легендарный супер-кулер в глубоком матовом черном цвете с 6 тепловыми трубками и бесшумными вентиляторами SSO2.'
+      },
+      {
+        id: 'cooler-ak620-digital',
+        name: 'DeepCool AK620 Digital Display Black',
+        type: 'air-dual',
+        price: 890000,
+        maxTdp: 260,
+        fans: '2x 120mm FDB + Статус-экран',
+        noise: '28 dB',
+        tier: 'mid',
+        badge: 'LED Температура',
+        desc: 'Двухбашенный массив с черным матовым радиатором и кристальным экраном отображения температуры и загрузки процессора.'
+      },
+      {
+        id: 'cooler-arctic-360',
+        name: 'Arctic Liquid Freezer III 360 ARGB',
+        type: 'aio-rgb',
+        price: 1850000,
+        maxTdp: 340,
+        fans: '3x 120mm P12 PWM + Вентилятор VRM',
+        noise: '23 dB',
+        tier: 'high',
+        badge: 'Толстый 38мм Радиатор',
+        desc: 'СЖО с увеличенным 38-мм радиатором, встроенным кулером для охлаждения цепей питания VRM и нативным креплением.'
+      },
+      {
+        id: 'cooler-rog-ryujin',
+        name: 'ASUS ROG Ryujin III 360 ARGB LCD Extreme',
+        type: 'aio-rgb',
+        price: 5250000,
+        maxTdp: 380,
+        fans: '3x 120mm ROG Magnetic + 3.5" Full LCD',
+        noise: '25 dB',
+        tier: 'prestige',
+        badge: '3.5" Большой Экран',
+        desc: 'Ультимативная жидкостная система с 3.5-дюймовым экраном 60Hz 32MB памяти, помпой Asetek 8-го поколения и магнитными вентиляторами.'
       }
     ],
 
@@ -700,6 +913,54 @@ const PC_DATA = {
         tier: 'prestige',
         badge: 'Флагман 64GB',
         desc: 'Матовые алюминиевые радиаторы с агрессивными линиями гиперкара.'
+      },
+      {
+        id: 'ram-32-ddr5-dominator',
+        name: 'Corsair Dominator Titanium RGB 32GB (2x16) DDR5-7200',
+        ramType: 'DDR5',
+        capacity: '32 ГБ (2x16)',
+        speed: '7200 МГц CL34',
+        rgb: true,
+        price: 3100000,
+        tier: 'high',
+        badge: '7200 МГц Титан',
+        desc: 'Кованый алюминиевый корпус с заменяемыми верхними планками и 11 светодиодами CAPELLIX.'
+      },
+      {
+        id: 'ram-32-ddr4-fury',
+        name: 'Kingston FURY Renegade RGB 32GB (2x16) DDR4-3600',
+        ramType: 'DDR4',
+        capacity: '32 ГБ (2x16)',
+        speed: '3600 МГц CL16',
+        rgb: true,
+        price: 1150000,
+        tier: 'mid',
+        badge: 'DDR4 Топ 32GB',
+        desc: 'Черный массивный радиатор с инфракрасной синхронизацией Infrared Sync Technology.'
+      },
+      {
+        id: 'ram-64-ddr5-corsair',
+        name: 'Corsair Vengeance RGB 64GB (2x32) DDR5-6000',
+        ramType: 'DDR5',
+        capacity: '64 ГБ (2x32)',
+        speed: '6000 МГц CL30 Low Latency',
+        rgb: true,
+        price: 3450000,
+        tier: 'high',
+        badge: '64GB CL30',
+        desc: 'Идеальный выбор для видеомонтажа, 3D рендеринга и работы с искусственным интеллектом.'
+      },
+      {
+        id: 'ram-96-ddr5-titanium',
+        name: 'G.Skill Trident Z5 RGB 96GB (2x48) DDR5-6400 Extreme',
+        ramType: 'DDR5',
+        capacity: '96 ГБ (2x48)',
+        speed: '6400 МГц CL32 Небинарная',
+        rgb: true,
+        price: 5850000,
+        tier: 'prestige',
+        badge: '96GB Ультиматум',
+        desc: 'Новейший небинарный комплект максимального объёма 96 ГБ для бескомпромиссных рабочих станций.'
       }
     ],
 
@@ -795,6 +1056,58 @@ const PC_DATA = {
         fpsMultiplier: 2.85,
         badge: 'Абсолютный Титан',
         desc: 'Самая быстрая видеокарта в мире с жидким металлом и подсветкой infinity mirror.'
+      },
+      {
+        id: 'gpu-rtx-4060ti-16',
+        name: 'NVIDIA GeForce RTX 4060 Ti 16GB GDDR6',
+        chip: 'RTX 4060 Ti',
+        vram: '16 ГБ GDDR6',
+        tdp: 165,
+        price: 6150000,
+        tier: 'mid',
+        score: 75,
+        fpsMultiplier: 1.25,
+        badge: '16GB Памяти',
+        desc: 'Увеличенный видеобуфер 16 ГБ для работы с тяжелыми текстурами в играх и обучения нейросетей.'
+      },
+      {
+        id: 'gpu-rx-7800xt',
+        name: 'AMD Radeon RX 7800 XT 16GB Sapphire Nitro+',
+        chip: 'RX 7800 XT',
+        vram: '16 ГБ GDDR6',
+        tdp: 265,
+        price: 7850000,
+        tier: 'high',
+        score: 88,
+        fpsMultiplier: 1.55,
+        badge: 'Nitro+ Топ 16GB',
+        desc: 'Испарительная камера Vapor-X, 16 ГБ быстрой памяти и высокий разгонный потенциал для 1440p.'
+      },
+      {
+        id: 'gpu-rtx-4080-fe',
+        name: 'NVIDIA GeForce RTX 4080 Founders Edition 16GB',
+        chip: 'RTX 4080',
+        vram: '16 ГБ GDDR6X',
+        tdp: 320,
+        price: 14800000,
+        tier: 'pro',
+        score: 108,
+        fpsMultiplier: 2.10,
+        badge: 'Founders Edition',
+        desc: 'Культовый литой титановый корпус от NVIDIA с проточным обдувом Flow-Through и тихими вентиляторами.'
+      },
+      {
+        id: 'gpu-rtx-4070ti-super',
+        name: 'MSI GeForce RTX 4070 Ti SUPER Gaming X Slim 16GB',
+        chip: 'RTX 4070 Ti SUPER',
+        vram: '16 ГБ GDDR6X',
+        tdp: 285,
+        price: 11950000,
+        tier: 'high',
+        score: 102,
+        fpsMultiplier: 1.95,
+        badge: 'Gaming X Slim',
+        desc: 'Тонкий изящный дизайн TRI FROZR 3 с вентиляторами TORX FAN 5.0 и поддержкой DLSS 3.5.'
       }
     ],
 
@@ -839,6 +1152,46 @@ const PC_DATA = {
         tier: 'prestige',
         badge: 'PCIe 5.0 12 ГБ/с',
         desc: 'Космические скорости новейшего поколения для мгновенной загрузки миров.'
+      },
+      {
+        id: 'ssd-2tb-sn850x',
+        name: 'WD Black SN850X 2TB M.2 PCIe 4.0 Gaming NVMe',
+        capacity: '2 ТБ',
+        speed: '7300 / 6600 МБ/с',
+        price: 2550000,
+        tier: 'high',
+        badge: 'WD Game Mode 2.0',
+        desc: 'Топовый игровой накопитель с режимом Game Mode 2.0 для предзагрузки игровых ресурсов.'
+      },
+      {
+        id: 'ssd-2tb-kc3000',
+        name: 'Kingston KC3000 2TB PCIe 4.0 NVMe M.2',
+        capacity: '2 ТБ',
+        speed: '7000 / 7000 МБ/с',
+        price: 2450000,
+        tier: 'high',
+        badge: '7000 МБ/с Графен',
+        desc: 'Низкопрофильный графеновый алюминиевый теплоотвод и контроллер Phison E18.'
+      },
+      {
+        id: 'ssd-4tb-990pro',
+        name: 'Samsung 990 PRO 4TB M.2 PCIe 4.0 Flagship',
+        capacity: '4 ТБ',
+        speed: '7450 / 6900 МБ/с',
+        price: 5450000,
+        tier: 'prestige',
+        badge: 'Гигант 4 ТБ',
+        desc: 'Огромный объем 4 ТБ на чипах Samsung V-NAND 8-го поколения с 4GB LPDDR4 кэшем.'
+      },
+      {
+        id: 'ssd-1tb-p3plus',
+        name: 'Crucial P3 Plus 1TB M.2 PCIe 4.0 3D NAND',
+        capacity: '1 ТБ',
+        speed: '5000 / 4200 МБ/с',
+        price: 950000,
+        tier: 'budget',
+        badge: 'Народный Gen4',
+        desc: 'Доступный скоростной Gen4 накопитель с чипами Micron 3D NAND для повседневных задач.'
       }
     ],
 
@@ -898,6 +1251,50 @@ const PC_DATA = {
         tier: 'prestige',
         badge: 'OLED Экран 1200W',
         desc: 'Встроенный OLED-дисплей реального потребления ватт и ARGB подсветка Aura.'
+      },
+      {
+        id: 'psu-850w-vertex',
+        name: 'Seasonic Vertex GX-850 850W Gold ATX 3.0',
+        wattage: 850,
+        cert: '80 PLUS Gold',
+        modular: true,
+        price: 2650000,
+        tier: 'high',
+        badge: 'Seasonic Японский',
+        desc: 'Премиальные японские конденсаторы 105°C, нативный кабель 12VHPWR 600W и тихий гибридный режим.'
+      },
+      {
+        id: 'psu-1000w-shift',
+        name: 'Corsair RM1000x Shift 1000W 80 PLUS Gold',
+        wattage: 1000,
+        cert: '80 PLUS Gold',
+        modular: true,
+        price: 2850000,
+        tier: 'high',
+        badge: 'Боковые Разъемы',
+        desc: 'Революционный доступ к разъемам с боковой стороны для максимально простого кабель-менеджмента.'
+      },
+      {
+        id: 'psu-750w-purepower',
+        name: 'be quiet! Pure Power 12 M 750W ATX 3.0',
+        wattage: 750,
+        cert: '80 PLUS Gold',
+        modular: true,
+        price: 1650000,
+        tier: 'mid',
+        badge: 'Немецкая Тишина',
+        desc: 'Две независимые линии 12V, поддержка PCIe 5.0 и бесшумный 120-мм вентилятор be quiet!.'
+      },
+      {
+        id: 'psu-1300w-meg',
+        name: 'MSI MEG Ai1300P PCIE5 1300W Platinum',
+        wattage: 1300,
+        cert: '80 PLUS Platinum',
+        modular: true,
+        price: 5650000,
+        tier: 'prestige',
+        badge: '1300W Platinum AI',
+        desc: 'Цифровой процессор управления с программным мониторингом в реальном времени через MSI Center.'
       }
     ]
   },

@@ -49,7 +49,7 @@
         <button id="navTabCatalog" class="nav-page-btn" data-page="pageCatalog">
           <span class="nav-tab-icon">📦</span>
           <span id="txtNavCatalog">Qismlar Katalogi</span>
-          <span class="nav-badge-count" id="navCatalogCount">42</span>
+          <span class="nav-badge-count" id="navCatalogCount">89</span>
         </button>
         <button id="navTabSaved" class="nav-page-btn" data-modal="saveLoadModal">
           <span class="nav-tab-icon">💾</span>
@@ -64,12 +64,6 @@
 
       <!-- Live Compatibility, Price & Audio Toggle -->
       <div class="header-stats">
-        <!-- Live Compatibility Status Badge -->
-        <div id="compatBadge" class="header-compat-badge compat-badge-ok" title="Moslik hisoboti">
-          <span class="compat-icon">✔</span>
-          <span class="compat-text" id="txtCompat">Tizim to‘liq mos keladi</span>
-        </div>
-
         <!-- Frameless Real-Time Price Display + Currency Switcher (UZS / USD / RUB) -->
         <div class="header-price-wrapper">
           <div class="header-price-block" title="Qismlarning umumiy qiymati / Стоимость сборки">
@@ -642,7 +636,7 @@
 
       <!-- Results Meta Counter -->
       <div class="catalog-results-meta">
-        <span id="catalogResultsCount">Показано: 42 комплектующих</span>
+        <span id="catalogResultsCount">Показано: 89 комплектующих</span>
         <span class="meta-hint">Кликните «Вставить в сборку» для мгновенного монтажа в 3D компьютер</span>
       </div>
 
@@ -765,7 +759,7 @@
   <div id="biosModal" class="bios-modal-backdrop">
     <div class="bios-screen-monitor">
       <div class="bios-header-brand">
-        <div class="bios-title">CYBER-LAB CUSTOM UEFI BIOS v2.4</div>
+        <div class="bios-title">CYBER-LAB CUSTOM UEFI BIOS v2.5</div>
         <div style="font-size: 0.75rem; color: #64748b;">POST CODE: 00 [NORMAL]</div>
       </div>
 
@@ -936,6 +930,22 @@
        BOTTOM FLOATING UTILITY BAR: AUDIO FX & LANGUAGE SWITCHER
        ======================================================================== -->
   <aside class="bottom-utility-bar" id="bottomUtilityBar" title="Sozlamalar va til / Настройки и язык">
+    <!-- Bottom Compatibility Status Badge -->
+    <div id="compatBadge" class="bottom-compat-badge compat-badge-ok" title="Moslik hisoboti / Совместимость">
+      <span class="compat-icon">✔</span>
+      <span class="compat-text" id="txtCompat">Совместимость ОК</span>
+    </div>
+
+    <!-- Quick Save Button (Bottom) -->
+    <button id="bottomSaveBtn" class="btn-utility-save" title="Terilmani saqlash / Сохранить сборку / Save Build">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+        <polyline points="7 3 7 8 15 8"></polyline>
+      </svg>
+      <span id="txtBottomSave">Сохранить</span>
+    </button>
+
     <!-- User Support Quick Button / Поддержка -->
     <button id="bottomSupportBtn" class="btn-utility-support" data-modal="supportModal" title="Yordam va Shikoyatlar / Поддержка / Support">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

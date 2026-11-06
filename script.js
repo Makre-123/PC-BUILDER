@@ -1010,7 +1010,7 @@ function updateCompatibility() {
   const t = (window.I18N && window.I18N[lang]) ? window.I18N[lang] : window.I18N.ru;
 
   if (badge) {
-    badge.className = 'header-compat-badge';
+    badge.className = 'bottom-compat-badge';
     if (issues.length > 0) {
       badge.classList.add('compat-badge-warn');
       badge.innerHTML = `<span class="compat-icon">⚠️</span> <span class="compat-text">${issues[0]}</span>`;
@@ -1057,6 +1057,36 @@ function updatePowerMeter() {
 // REALISTIC PC PERFORMANCE FORECASTS: GAMING FPS, 1% LOW, BOTTLENECK & WORKSTATION
 // ==========================================================================
 function updateBenchmarkUI() {
+  // Hide all performance forecasts unless at least CPU+GPU are installed
+  // Just a case or single component = no meaningful forecast
+  const cpu = state.selected.cpu;
+  const gpu = state.selected.gpu;
+  const hasEnoughForForecast = cpu && gpu;
+  
+  const fpsContainer = document.getElementById('fpsGamesContainer');
+  const bottleneckPanel = document.getElementById('bottleneckPanel');
+  const displayRecPanel = document.getElementById('displayRecPanel');
+  const workContainer = document.getElementById('workstationContainer');
+  const thermalCard = document.getElementById('thermalForecastCard');
+  
+  if (!hasEnoughForForecast) {
+    // Show placeholder message
+    const msg = !cpu && !gpu
+      ? 'Установите CPU и GPU для прогноза производительности'
+      : (!cpu ? 'Добавьте процессор для полного прогноза' : 'Добавьте видеокарту для полного прогноза');
+    if (fpsContainer) fpsContainer.innerHTML = `<div style="text-align:center;color:#475569;padding:24px 12px;font-size:0.82rem;">${msg}</div>`;
+    if (bottleneckPanel) bottleneckPanel.style.display = 'none';
+    if (displayRecPanel) displayRecPanel.style.display = 'none';
+    if (workContainer) workContainer.innerHTML = `<div style="text-align:center;color:#475569;padding:24px 12px;font-size:0.82rem;">${msg}</div>`;
+    if (thermalCard) thermalCard.style.display = 'none';
+    return;
+  }
+  
+  // Show panels
+  if (bottleneckPanel) bottleneckPanel.style.display = '';
+  if (displayRecPanel) displayRecPanel.style.display = '';
+  if (thermalCard) thermalCard.style.display = '';
+
   updateFpsMeter();
   updateWorkstationMeter();
   updateThermalForecast();
@@ -1069,45 +1099,83 @@ function updateFpsMeter() {
 
   const cpu = state.selected.cpu;
   const gpu = state.selected.gpu;
+  
+  // If no GPU and no CPU — nothing to show
+  if (!cpu && !gpu) return;
+  
   const cpuScore = cpu ? cpu.score : 65;
-  const gpuMultiplier = gpu ? gpu.fpsMultiplier : 1.0;
-  const vramStr = gpu ? (gpu.vram || '8 ГБ') : '8 ГБ';
+  const gpuMultiplier = gpu ? gpu.fpsMultiplier : 0.8;
+  const vramStr = gpu ? (gpu.vram || '8 ГБ') : '4 ГБ';
   const vramGB = parseInt(vramStr, 10) || 8;
+  const gpuScore = gpu ? gpu.score : 50;
 
-  // Realistic Resolution Impact
+  // Real-world resolution scaling based on actual benchmark data
+  // 1080p = baseline, 1440p = ~68-75% of 1080p, 4K = ~40-55% of 1080p (VRAM dependent)
   let resMultiplier = 1.0;
   if (state.activeResolution === '1440p') {
-    resMultiplier = 0.72;
+    resMultiplier = 0.70;
   } else if (state.activeResolution === '4k') {
-    if (vramGB < 12) {
-      resMultiplier = 0.38; // 8GB buffer bottleneck at 4K Ultra
+    if (vramGB < 8) {
+      resMultiplier = 0.28; // Severe VRAM bottleneck at 4K
+    } else if (vramGB < 12) {
+      resMultiplier = 0.36; // 8GB tight at 4K Ultra
     } else if (vramGB >= 24) {
-      resMultiplier = 0.54; // 24GB top tier bandwidth
+      resMultiplier = 0.52; // 24GB+ high bandwidth
     } else {
-      resMultiplier = 0.46;
+      resMultiplier = 0.44;
     }
+  }
+  
+  // RAM impact: single-channel or low capacity hurts FPS
+  const ram = state.selected.ram;
+  let ramPenalty = 1.0;
+  if (ram) {
+    const ramCap = parseInt(ram.capacity, 10) || 16;
+    if (ramCap <= 8) ramPenalty = 0.88; // Single stick 8GB — stutters, less bandwidth
+    else if (ramCap <= 16) ramPenalty = 0.97;
+  } else {
+    ramPenalty = 0.85; // No RAM selected
   }
 
   let totalFpsSum = 0;
 
   PC_DATA.games.forEach(game => {
-    // Raw FPS calculated with genuine CPU single-core weighting and GPU rasterization power
-    const rawFps = (game.baseFps * (cpuScore / 75) * game.cpuWeight) + 
-                   (game.baseFps * gpuMultiplier * game.gpuWeight);
-    const finalFps = Math.max(22, Math.round(rawFps * resMultiplier));
+    // Realistic FPS formula:
+    // - GPU determines the base rendering performance (weighted by game type)
+    // - CPU determines the frame scheduling and simulation (weighted by game type)
+    // - Games have different CPU/GPU dependency ratios
+    const gpuFps = game.baseFps * gpuMultiplier * game.gpuWeight;
+    const cpuFps = game.baseFps * (cpuScore / 72) * game.cpuWeight;
+    const rawFps = gpuFps + cpuFps;
+    
+    // Apply resolution, RAM, and clamp to realistic floor
+    const finalFps = Math.max(18, Math.round(rawFps * resMultiplier * ramPenalty));
     totalFpsSum += finalFps;
 
-    // 1% Low FPS reflects frame pacing stability and micro-stutter resistance
+    // 1% Low FPS — reflects frame pacing, micro-stutters, driver overhead
+    // Real-world 1% lows are typically 60-78% of average depending on game engine
     const lowFpsRatio = game.lowFpsRatio || 0.72;
-    const cpuStabilityBonus = Math.min(1.05, Math.max(0.85, cpuScore / 85));
-    const finalLowFps = Math.max(16, Math.min(finalFps - 3, Math.round(finalFps * lowFpsRatio * cpuStabilityBonus)));
+    const cpuStabilityBonus = Math.min(1.08, Math.max(0.82, cpuScore / 82));
+    // RAM penalty hits 1% lows harder (memory bandwidth bottleneck)
+    const lowRamFactor = ramPenalty < 0.95 ? ramPenalty * 0.95 : 1.0;
+    const finalLowFps = Math.max(12, Math.min(finalFps - 4, Math.round(finalFps * lowFpsRatio * cpuStabilityBonus * lowRamFactor)));
 
-    const barWidthPercent = Math.min(100, Math.round((finalFps / 260) * 100));
+    const barWidthPercent = Math.min(100, Math.round((finalFps / 300) * 100));
 
     let fpsColor = 'var(--neon-green)';
-    if (finalFps < 60) fpsColor = 'var(--neon-amber)';
+    if (finalFps < 30) fpsColor = 'var(--neon-red, #ef4444)';
+    else if (finalFps < 60) fpsColor = 'var(--neon-amber)';
+    else if (finalFps >= 240) fpsColor = '#a855f7';
     else if (finalFps >= 144) fpsColor = 'var(--neon-cyan)';
-    else if (finalFps >= 220) fpsColor = '#a855f7';
+
+    // FPS verdict label
+    let fpsVerdict = '';
+    if (finalFps < 30) fpsVerdict = 'Слайдшоу';
+    else if (finalFps < 60) fpsVerdict = 'Играбельно';
+    else if (finalFps < 100) fpsVerdict = 'Плавно';
+    else if (finalFps < 144) fpsVerdict = 'Отлично';
+    else if (finalFps < 240) fpsVerdict = 'Киберспорт';
+    else fpsVerdict = 'Ультра';
 
     const item = document.createElement('div');
     item.className = 'fps-game-item';
@@ -1120,6 +1188,7 @@ function updateFpsMeter() {
         <div class="fps-numbers-wrap">
           <div class="fps-number-badge" style="color: ${fpsColor};">
             ~${finalFps} <span style="font-size: 0.65rem; color: #94a3b8;">AVG</span>
+            <span style="font-size: 0.55rem; margin-left: 4px; color: ${fpsColor}; opacity: 0.7;">${fpsVerdict}</span>
           </div>
           <div class="fps-low-badge">
             1% Low: <span style="color: #cbd5e1; font-weight: 700;">${finalLowFps} FPS</span>
@@ -1133,10 +1202,10 @@ function updateFpsMeter() {
     container.appendChild(item);
   });
 
-  // Update System Balance & Bottleneck Analyzer
-  updateBottleneckAnalyzer(cpuScore, gpu ? gpu.score : 65);
+  // System Balance & Bottleneck Analyzer
+  updateBottleneckAnalyzer(cpuScore, gpuScore);
 
-  // Update Recommended Display based on gaming performance
+  // Recommended Display
   updateDisplayRecommendation(totalFpsSum / PC_DATA.games.length);
 }
 
@@ -1218,31 +1287,57 @@ function updateWorkstationMeter() {
 
   const cpu = state.selected.cpu;
   const gpu = state.selected.gpu;
-  const cpuScore = cpu ? cpu.score : 65;
-  const gpuMultiplier = gpu ? gpu.fpsMultiplier : 1.0;
-
-  // Real Calculated Benchmarks
-  const cinebenchScore = Math.round(cpuScore * 390 + (cpu && cpu.cores && cpu.cores.includes('24') ? 2200 : 0));
-  const timeSpyScore = Math.round(gpuMultiplier * 12850);
+  if (!cpu && !gpu) return;
   
-  // 10-minute 4K 60fps video export time in minutes/seconds
-  const renderSecRaw = Math.max(75, Math.round(520 / (gpuMultiplier * 0.75 + (cpuScore / 75) * 0.45)));
+  const cpuScore = cpu ? cpu.score : 55;
+  const gpuMultiplier = gpu ? gpu.fpsMultiplier : 0.7;
+  const gpuScore = gpu ? gpu.score : 40;
+  const cpuCores = cpu ? (parseInt(cpu.cores, 10) || 6) : 6;
+  const ramCapacity = state.selected.ram ? (parseInt(state.selected.ram.capacity, 10) || 16) : 16;
+
+  // Cinebench R23 Multi-Core: real-world scores based on actual CPU benchmarks
+  // R5 5600 ≈ 10500, i5-12400F ≈ 12300, R7 7800X3D ≈ 15200, i9-14900KS ≈ 40000
+  let cinebenchScore;
+  if (cpuCores >= 24) {
+    cinebenchScore = Math.round(cpuScore * 385 + 2400);
+  } else if (cpuCores >= 16) {
+    cinebenchScore = Math.round(cpuScore * 340 + 1200);
+  } else if (cpuCores >= 8) {
+    cinebenchScore = Math.round(cpuScore * 195 + 600);
+  } else {
+    cinebenchScore = Math.round(cpuScore * 160 + 300);
+  }
+
+  // 3DMark Time Spy GPU Score: real-world reference
+  // RTX 4060 ≈ 11300, RTX 4070S ≈ 17500, RTX 4090 ≈ 36500, RTX 5090 ≈ 47000
+  const timeSpyScore = Math.round(gpuMultiplier * 11300 + gpuScore * 28);
+
+  // 4K 60fps video render time (10 min clip) in DaVinci Resolve / Premiere
+  const renderFactor = (gpuMultiplier * 0.65 + (cpuScore / 72) * 0.35);
+  const renderSecRaw = Math.max(55, Math.round(480 / renderFactor));
   const renderMins = Math.floor(renderSecRaw / 60);
   const renderSecs = renderSecRaw % 60;
   const renderTimeStr = `~${renderMins} мин ${renderSecs < 10 ? '0' : ''}${renderSecs} сек`;
 
-  // Blender 4.0 Classroom Scene render time
-  const blenderSecRaw = Math.max(38, Math.round(360 / (gpuMultiplier * 0.85 + (cpuScore / 75) * 0.25)));
+  // Blender 4.0 Classroom Scene render (OptiX GPU)
+  const blenderSecRaw = Math.max(22, Math.round(320 / (gpuMultiplier * 0.82 + (cpuScore / 72) * 0.22)));
   const blenderTimeStr = `~${blenderSecRaw} сек`;
 
-  // Stable Diffusion XL AI Inference speed
-  const aiItSec = (gpuMultiplier * 5.2).toFixed(1);
+  // Stable Diffusion XL / ComfyUI inference speed
+  // RTX 4060 ≈ 4.5 it/s, RTX 4090 ≈ 15 it/s, RTX 5090 ≈ 22 it/s
+  const vramGB = gpu ? (parseInt(gpu.vram, 10) || 8) : 8;
+  const aiItSec = Math.max(1.2, (gpuMultiplier * 4.8 * (vramGB >= 16 ? 1.12 : 1.0))).toFixed(1);
+  
+  // RAM bandwidth impact label
+  let ramNote = '';
+  if (ramCapacity <= 8) ramNote = ' (8 ГБ ОЗУ — узкое место!)';
+  else if (ramCapacity >= 64) ramNote = ' (64+ ГБ — полный запас)';
 
   const benchItems = [
     {
       icon: '🧠',
       title: 'Cinebench R23 Multi-Core',
-      sub: 'Многопоточный тест CPU (2024)',
+      sub: `CPU ${cpuCores}-ядер рендеринг` + ramNote,
       score: `${cinebenchScore.toLocaleString()} pts`,
       color: '#38bdf8'
     },
@@ -1270,7 +1365,7 @@ function updateWorkstationMeter() {
     {
       icon: '⚡',
       title: 'Нейросети & AI (Stable Diffusion XL)',
-      sub: 'Скорость генерации изображений',
+      sub: `VRAM: ${vramGB} ГБ — генерация изображений`,
       score: `~${aiItSec} it/s`,
       color: '#a855f7'
     }
@@ -1303,35 +1398,66 @@ function updateThermalForecast() {
   const cpu = state.selected.cpu;
   const cooler = state.selected.cooler;
   const gpu = state.selected.gpu;
+  
+  if (!cpu && !gpu) return;
 
+  // CPU Temperature: based on TDP vs cooler capacity ratio
+  // Real-world: R5 5600 (65W) + AK400 ≈ 55°C, i9-14900KS (253W) + 360AIO ≈ 78°C
   const cpuTdp = cpu ? (cpu.tdp || 65) : 65;
-  const coolerMaxTdp = cooler ? (cooler.maxTdp || 200) : 180;
-  const delta = cpuTdp / coolerMaxTdp;
+  const coolerMaxTdp = cooler ? (cooler.maxTdp || 200) : 150;
+  const isAioCooler = cooler && cooler.type && cooler.type.includes('aio');
+  const coolerEfficiency = isAioCooler ? 0.85 : 1.0; // AIO is ~15% more efficient
+  const delta = (cpuTdp / coolerMaxTdp) * coolerEfficiency;
 
-  const estimatedCpuTemp = Math.round(44 + delta * 36);
+  // Base ambient 28°C, plus thermal rise based on load ratio
+  const estimatedCpuTemp = Math.round(28 + delta * 52);
   if (cpuTempEl) {
-    if (estimatedCpuTemp < 65) {
-      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Холодно)`;
+    if (estimatedCpuTemp < 55) {
+      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Холодный — запас охлаждения)`;
       cpuTempEl.style.color = '#22c55e';
-    } else if (estimatedCpuTemp <= 78) {
-      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Норма / Идеал)`;
+    } else if (estimatedCpuTemp < 70) {
+      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Норма — комфортный режим)`;
       cpuTempEl.style.color = '#38bdf8';
-    } else {
-      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Высокая нагрузка)`;
+    } else if (estimatedCpuTemp <= 82) {
+      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Тепловой режим — нагружен)`;
       cpuTempEl.style.color = '#f59e0b';
+    } else {
+      cpuTempEl.textContent = `~${estimatedCpuTemp}°C (Перегрев! Усильте охлаждение!)`;
+      cpuTempEl.style.color = '#ef4444';
     }
   }
 
+  // GPU Temperature: based on TDP tier — bigger GPUs have better coolers
   if (gpuTempEl) {
-    const isBigGpu = gpu && (gpu.id.includes('4090') || gpu.id.includes('4080'));
-    const gpuTemp = isBigGpu ? '~62°C (3-слотовый холод)' : '~66°C (Норма)';
-    gpuTempEl.textContent = gpuTemp;
-    gpuTempEl.style.color = '#22c55e';
+    if (gpu) {
+      const gpuTdp = gpu.tdp || 200;
+      let gpuTemp;
+      if (gpuTdp <= 150) {
+        gpuTemp = 62; // Low-power cards run cool
+      } else if (gpuTdp <= 250) {
+        gpuTemp = 68; // Mid-range
+      } else if (gpuTdp <= 360) {
+        gpuTemp = 72; // High-end triple fan
+      } else {
+        gpuTemp = 78; // Monster cards like 5090 (575W)
+      }
+      const gpuLabel = gpuTemp <= 65 ? 'Тихий режим' : (gpuTemp <= 72 ? 'Стандарт' : 'Под нагрузкой');
+      gpuTempEl.textContent = `~${gpuTemp}°C (${gpuLabel})`;
+      gpuTempEl.style.color = gpuTemp <= 70 ? '#22c55e' : (gpuTemp <= 76 ? '#f59e0b' : '#ef4444');
+    } else {
+      gpuTempEl.textContent = '— (GPU не установлена)';
+      gpuTempEl.style.color = '#64748b';
+    }
   }
 
   if (noiseEl) {
-    const isAio = cooler && cooler.type && cooler.type.includes('aio');
-    noiseEl.textContent = isAio ? '~27 дБ (Бесшумная помпа)' : '~31 дБ (Тихий шелест)';
+    if (isAioCooler) {
+      noiseEl.textContent = '~25-28 дБ (Тихая помпа + радиатор)';
+    } else if (cooler && coolerMaxTdp >= 250) {
+      noiseEl.textContent = '~28-32 дБ (Мощный башенный кулер)';
+    } else {
+      noiseEl.textContent = '~30-36 дБ (Стандартное охлаждение)';
+    }
     noiseEl.style.color = '#38bdf8';
   }
 }
@@ -1789,6 +1915,7 @@ function setupEventListeners() {
   // Save / Load Modal Triggers
   document.getElementById('openSaveModalBtn')?.addEventListener('click', () => openModal('saveLoadModal'));
   document.getElementById('quickSaveBtn')?.addEventListener('click', () => openModal('saveLoadModal'));
+  document.getElementById('bottomSaveBtn')?.addEventListener('click', () => openModal('saveLoadModal'));
 
   document.getElementById('saveBuildCommitBtn')?.addEventListener('click', () => {
     const input = document.getElementById('saveBuildNameInput');

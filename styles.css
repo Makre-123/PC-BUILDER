@@ -541,6 +541,69 @@ body::before {
   transform: translateY(-1px);
 }
 
+/* Bottom Compatibility Badge */
+.bottom-compat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+.bottom-compat-badge.compat-badge-ok {
+  background: rgba(0, 255, 102, 0.12);
+  border: 1px solid rgba(0, 255, 102, 0.35);
+  color: #22c55e;
+}
+.bottom-compat-badge.compat-badge-warn {
+  background: rgba(255, 160, 0, 0.14);
+  border: 1px solid rgba(255, 160, 0, 0.5);
+  color: #f59e0b;
+  animation: compatPulse 1.8s ease infinite;
+}
+@keyframes compatPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(245, 158, 11, 0); }
+  50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.35); }
+}
+.bottom-compat-badge .compat-icon {
+  font-size: 0.8rem;
+}
+.bottom-compat-badge .compat-text {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bottom Save Button */
+.btn-utility-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 255, 102, 0.12);
+  border: 1px solid rgba(0, 255, 102, 0.4);
+  border-radius: 4px;
+  padding: 5px 12px;
+  height: 32px;
+  color: #22c55e;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.btn-utility-save:hover {
+  background: rgba(0, 255, 102, 0.28);
+  border-color: #22c55e;
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(0, 255, 102, 0.4);
+  transform: translateY(-1px);
+}
+
 .lang-option-btn {
   display: flex;
   align-items: center;

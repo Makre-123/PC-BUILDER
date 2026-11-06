@@ -855,6 +855,17 @@ const PC_DATA = {
     // 5. RAM
     ram: [
       {
+        id: 'ram-8-ddr4',
+        name: 'Kingston FURY Beast 8GB (1x8) DDR4-3200',
+        ramType: 'DDR4',
+        capacity: '8 ГБ',
+        speed: '3200 МГц',
+        price: 290000,
+        tier: 'budget',
+        badge: '1 Плашка',
+        desc: 'Базовая планка оперативной памяти для офисных задач и лёгкого гейминга.'
+      },
+      {
         id: 'ram-16-ddr4',
         name: 'Kingston FURY Beast RGB 16GB (2x8) DDR4-3200',
         ramType: 'DDR4',
@@ -1108,11 +1119,109 @@ const PC_DATA = {
         fpsMultiplier: 1.95,
         badge: 'Gaming X Slim',
         desc: 'Тонкий изящный дизайн TRI FROZR 3 с вентиляторами TORX FAN 5.0 и поддержкой DLSS 3.5.'
+      },
+      {
+        id: 'gpu-rtx-5060',
+        name: 'NVIDIA GeForce RTX 5060 8GB GDDR7 Founders Edition',
+        chip: 'RTX 5060',
+        vram: '8 ГБ GDDR7',
+        tdp: 150,
+        price: 5200000,
+        tier: 'budget',
+        score: 90,
+        fpsMultiplier: 1.55,
+        badge: 'Blackwell Эконом',
+        desc: 'Новейшая архитектура Blackwell начального уровня с DLSS 4 Multi Frame Generation.'
+      },
+      {
+        id: 'gpu-rtx-5060ti',
+        name: 'ASUS Dual GeForce RTX 5060 Ti 16GB GDDR7',
+        chip: 'RTX 5060 Ti',
+        vram: '16 ГБ GDDR7',
+        tdp: 180,
+        price: 7800000,
+        tier: 'mid',
+        score: 108,
+        fpsMultiplier: 2.05,
+        badge: 'Blackwell 16ГБ',
+        desc: '16 ГБ видеопамяти GDDR7 для 1440p гейминга с полной поддержкой DLSS 4 и Ray Tracing.'
+      },
+      {
+        id: 'gpu-rtx-5070',
+        name: 'NVIDIA GeForce RTX 5070 12GB GDDR7 Founders Edition',
+        chip: 'RTX 5070',
+        vram: '12 ГБ GDDR7',
+        tdp: 250,
+        price: 10500000,
+        tier: 'high',
+        score: 148,
+        fpsMultiplier: 2.90,
+        badge: 'RTX 4090 Мощь',
+        desc: 'Уровень RTX 4090 в компактном корпусе Blackwell по цене вдвое ниже, с DLSS 4 MFG.'
+      },
+      {
+        id: 'gpu-rtx-5070ti',
+        name: 'MSI GeForce RTX 5070 Ti 16GB GDDR7 Gaming X Slim',
+        chip: 'RTX 5070 Ti',
+        vram: '16 ГБ GDDR7',
+        tdp: 300,
+        price: 14200000,
+        tier: 'high',
+        score: 165,
+        fpsMultiplier: 3.30,
+        badge: 'Blackwell Топ',
+        desc: 'Тонкий элегантный дизайн TRI FROZR 4 с 16 ГБ GDDR7 и аппаратным RT 5-го поколения.'
+      },
+      {
+        id: 'gpu-rtx-5080',
+        name: 'NVIDIA GeForce RTX 5080 16GB GDDR7 Founders Edition',
+        chip: 'RTX 5080',
+        vram: '16 ГБ GDDR7',
+        tdp: 360,
+        price: 19500000,
+        tier: 'pro',
+        score: 190,
+        fpsMultiplier: 3.85,
+        badge: 'Blackwell Pro',
+        desc: 'Флагманский Blackwell GPU второго эшелона с полными 16 ГБ GDDR7 и 30 TFLOPS.'
+      },
+      {
+        id: 'gpu-rtx-5090',
+        name: 'NVIDIA GeForce RTX 5090 32GB GDDR7 Founders Edition',
+        chip: 'RTX 5090',
+        vram: '32 ГБ GDDR7',
+        tdp: 575,
+        price: 42500000,
+        tier: 'prestige',
+        score: 240,
+        fpsMultiplier: 4.85,
+        badge: 'Blackwell Зверь',
+        desc: 'Абсолютная машина уничтожения — 32 ГБ GDDR7, 21760 CUDA ядер, 1.8 ТБ/с пропускная способность.'
       }
     ],
 
     // 7. STORAGE SSD NVMe
     storage: [
+      {
+        id: 'ssd-256gb-a400',
+        name: 'Kingston A400 256GB 2.5" SATA III SSD',
+        capacity: '256 ГБ',
+        speed: '500 / 350 МБ/с',
+        price: 280000,
+        tier: 'budget',
+        badge: '256 ГБ SATA',
+        desc: 'Бюджетный SATA SSD для загрузки ОС. Замена старому HDD.'
+      },
+      {
+        id: 'ssd-512gb-nv2',
+        name: 'Kingston NV2 512GB M.2 PCIe 4.0 NVMe',
+        capacity: '512 ГБ',
+        speed: '3500 / 2100 МБ/с',
+        price: 490000,
+        tier: 'budget',
+        badge: '512 ГБ NVMe',
+        desc: 'Компактный M.2 NVMe для минималистичных сборок и системного диска.'
+      },
       {
         id: 'ssd-1tb-nv2',
         name: 'Kingston NV2 1TB M.2 PCIe 4.0 NVMe',
@@ -1304,13 +1413,13 @@ const PC_DATA = {
     {
       id: 'cyberpunk',
       name: 'Cyberpunk 2077: Phantom Liberty',
-      genre: 'Ultra RT + DLSS 3.5 / FSR',
-      preset: 'Ultra + Ray Tracing',
-      baseFps: 48,
-      cpuWeight: 0.28,
-      gpuWeight: 0.72,
-      lowFpsRatio: 0.74,
-      targetRes: '1440p'
+      genre: 'Open World / Ultra + DLSS 3.5',
+      preset: 'Ultra (без Path Tracing)',
+      baseFps: 62,
+      cpuWeight: 0.30,
+      gpuWeight: 0.70,
+      lowFpsRatio: 0.72,
+      targetRes: '1080p'
     },
     {
       id: 'cs2',
@@ -1328,11 +1437,11 @@ const PC_DATA = {
       name: 'GTA V / GTA VI Ready',
       genre: 'Открытый мир / Very High Density',
       preset: 'Very High',
-      baseFps: 125,
-      cpuWeight: 0.38,
-      gpuWeight: 0.62,
-      lowFpsRatio: 0.76,
-      targetRes: '1440p'
+      baseFps: 95,
+      cpuWeight: 0.42,
+      gpuWeight: 0.58,
+      lowFpsRatio: 0.74,
+      targetRes: '1080p'
     },
     {
       id: 'warzone',
@@ -1348,13 +1457,13 @@ const PC_DATA = {
     {
       id: 'forza5',
       name: 'Forza Horizon 5',
-      genre: 'Гонки / Extreme Ray Tracing',
+      genre: 'Гонки / Extreme Settings',
       preset: 'Extreme',
-      baseFps: 110,
-      cpuWeight: 0.30,
-      gpuWeight: 0.70,
-      lowFpsRatio: 0.82,
-      targetRes: '1440p'
+      baseFps: 82,
+      cpuWeight: 0.32,
+      gpuWeight: 0.68,
+      lowFpsRatio: 0.80,
+      targetRes: '1080p'
     },
     {
       id: 'dota2',

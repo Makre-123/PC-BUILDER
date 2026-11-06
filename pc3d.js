@@ -69,6 +69,7 @@ class CyberPC3DViewer {
     this.currentCoolerId = 'cooler-assassin';
     this.currentGpuId = 'gpu-rtx-4070s';
     this.currentMbId = 'mb-b650-am5';
+    this.currentCpuId = 'cpu-r7-7800x3d';
     this.currentRamId = 'ram-32-ddr5-rgb';
     this.currentSsdId = 'ssd-1tb-990pro';
     this.currentPsuId = 'psu-750w-gold';
@@ -181,8 +182,9 @@ class CyberPC3DViewer {
   }
 
   // CPU Integrated Heat Spreader (IHS) Laser Engraving
-  getCpuIhsTexture(isIntel = false) {
-    const key = `cpu_${isIntel ? 'intel' : 'amd'}`;
+  getCpuIhsTexture(isIntel = false, cpuId = '') {
+    // Use cpuId for unique cache key so each CPU gets its own texture
+    const key = `cpu_${cpuId || (isIntel ? 'intel' : 'amd')}`;
     return this.createCanvasTexture(key, 512, 512, (ctx, w, h) => {
       // Brushed nickel metal background
       ctx.fillStyle = '#d1d5db';
@@ -196,27 +198,48 @@ class CyberPC3DViewer {
         }
       }
 
-      // Laser Etching
+      // Laser Etching — CPU-specific labels
       ctx.fillStyle = '#374151';
       ctx.textAlign = 'center';
 
+      // Map CPU IDs to real-world labels
+      const cpuLabels = {
+        'cpu-r5-5600':     { brand: 'AMD Ryzen™ 5', model: '5600', serial: '100-100000927', fab: 'TSMC 7nm' },
+        'cpu-i5-12400f':   { brand: 'intel®', model: 'CORE™ i5-12400F', serial: 'SRL4W 2.50GHz', fab: 'INTEL 10nm' },
+        'cpu-r5-7500f':    { brand: 'AMD Ryzen™ 5', model: '7500F', serial: '100-000000597', fab: 'TSMC 5nm' },
+        'cpu-i5-14600kf':  { brand: 'intel®', model: 'CORE™ i5-14600KF', serial: 'SRN2T 3.50GHz', fab: 'INTEL 7' },
+        'cpu-r7-7800x3d':  { brand: 'AMD Ryzen™ 7', model: '7800X3D', serial: '100-100000910', fab: 'TSMC 5nm V$' },
+        'cpu-r7-9700x':    { brand: 'AMD Ryzen™ 7', model: '9700X', serial: '100-100001404', fab: 'TSMC 4nm Zen5' },
+        'cpu-i7-14700k':   { brand: 'intel®', model: 'CORE™ i7-14700K', serial: 'SRN3P 3.40GHz', fab: 'INTEL 7' },
+        'cpu-i9-14900ks':  { brand: 'intel®', model: 'CORE™ i9-14900KS', serial: 'SRN48 3.20GHz', fab: 'INTEL 7' },
+        'cpu-r7-5700x3d':  { brand: 'AMD Ryzen™ 7', model: '5700X3D', serial: '100-100001503', fab: 'TSMC 7nm V$' },
+        'cpu-i5-13400f':   { brand: 'intel®', model: 'CORE™ i5-13400F', serial: 'SRN2B 2.50GHz', fab: 'INTEL 7' },
+        'cpu-i7-13700kf':  { brand: 'intel®', model: 'CORE™ i7-13700KF', serial: 'SRN3N 3.40GHz', fab: 'INTEL 7' },
+        'cpu-r9-9950x':    { brand: 'AMD Ryzen™ 9', model: '9950X', serial: '100-100001505', fab: 'TSMC 4nm Zen5' }
+      };
+
+      const info = cpuLabels[cpuId] || (isIntel
+        ? { brand: 'intel®', model: 'CORE™ Processor', serial: 'SRxxx', fab: 'INTEL' }
+        : { brand: 'AMD Ryzen™', model: 'Processor', serial: '100-xxxxxxxxx', fab: 'TSMC' });
+
       if (isIntel) {
         ctx.font = 'bold 34px "Orbitron", sans-serif';
-        ctx.fillText('intel®', w / 2, 160);
+        ctx.fillText(info.brand, w / 2, 150);
         ctx.font = 'bold 28px sans-serif';
-        ctx.fillText('CORE™ i9-14900K', w / 2, 210);
+        ctx.fillText(info.model, w / 2, 200);
         ctx.font = '16px monospace';
-        ctx.fillText('SRN48 3.20GHz', w / 2, 260);
-        ctx.fillText('MALAY L338D129', w / 2, 290);
+        ctx.fillText(info.serial, w / 2, 250);
+        ctx.fillText('MALAY L338D129', w / 2, 278);
+        ctx.fillText(info.fab, w / 2, 306);
       } else {
-        ctx.font = 'bold 36px "Orbitron", sans-serif';
-        ctx.fillText('AMD Ryzen™ 7', w / 2, 160);
+        ctx.font = 'bold 34px "Orbitron", sans-serif';
+        ctx.fillText(info.brand, w / 2, 150);
         ctx.font = 'bold 30px sans-serif';
-        ctx.fillText('7800X3D', w / 2, 210);
+        ctx.fillText(info.model, w / 2, 200);
         ctx.font = '16px monospace';
-        ctx.fillText('DIFFUSED IN USA', w / 2, 260);
-        ctx.fillText('MADE IN TAIWAN', w / 2, 290);
-        ctx.fillText('9NR8347X30129', w / 2, 320);
+        ctx.fillText(info.serial, w / 2, 250);
+        ctx.fillText('DIFFUSED IN USA', w / 2, 278);
+        ctx.fillText(info.fab, w / 2, 306);
       }
 
       // Gold Triangle Alignment Marker
@@ -505,7 +528,7 @@ class CyberPC3DViewer {
     // 8. Build Initial System
     this.buildCase(this.currentCaseId);
     this.buildMotherboard(this.currentMbId);
-    this.buildCpuChip();
+    this.buildCpuChip(this.currentCpuId);
     this.buildThermalPaste();
     this.buildRam(this.currentRamId);
     this.buildSsd(this.currentSsdId);
@@ -1062,10 +1085,13 @@ class CyberPC3DViewer {
   }
 
   // 2. CPU & SOCKET (AM5/LGA1700 Mechanical Bracket + Lever)
-  buildCpuChip() {
+  buildCpuChip(cpuId = this.currentCpuId) {
+    if (cpuId) this.currentCpuId = cpuId;
     while (this.cpuChipGroup.children.length > 0) {
       this.cpuChipGroup.remove(this.cpuChipGroup.children[0]);
     }
+
+    const isIntel = cpuId && cpuId.includes('cpu-i');
 
     // Socket Base Plate
     const socketBase = new THREE.Mesh(
@@ -1096,8 +1122,8 @@ class CyberPC3DViewer {
     );
     this.cpuChipGroup.add(leverMesh);
 
-    // High-Detail Laser-Engraved Nickel IHS
-    const ihsTex = this.getCpuIhsTexture(false);
+    // High-Detail Laser-Engraved Nickel IHS — pass CPU ID for correct label
+    const ihsTex = this.getCpuIhsTexture(isIntel, cpuId);
     const ihsMat = new THREE.MeshStandardMaterial({
       map: ihsTex,
       metalness: 0.85,
@@ -2270,7 +2296,7 @@ class CyberPC3DViewer {
     // REAR CASE CONNECTORS & FULL MOTHERBOARD I/O SHIELD (Visible from outside)
     // ------------------------------------------------------------------------
     const zBack = -depth / 2;
-    const zFace = zBack - 0.05; // Placed on exterior rear chassis wall, 100% visible from behind!
+    const zFace = zBack - 0.25; // Placed on exterior rear chassis wall, protruding past wall thickness!
     const ioX = isTerraItx ? (width / 2 - 1.6) : 4.55;
     const ioY = isTerraItx ? (height / 2 - 4.8) : 3.8;
 
@@ -3661,9 +3687,15 @@ class CyberPC3DViewer {
         this.buildCooler(itemId);
         targetGroup = this.coolerGroup;
         break;
+      case 'cpu':
+        this.currentCpuId = itemId;
+        this.buildCpuChip(itemId);
+        this.buildThermalPaste();
+        targetGroup = this.cpuChipGroup;
+        break;
       case 'motherboard':
         this.buildMotherboard(itemId);
-        this.buildCpuChip();
+        this.buildCpuChip(this.currentCpuId);
         this.buildThermalPaste();
         this.buildCables();
         targetGroup = this.mbMeshGroup;

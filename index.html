@@ -427,28 +427,93 @@
           </div>
         </div>
 
-        <!-- 2. FPS Gaming Forecast -->
+        <!-- 2. FPS & Real Performance Forecast -->
         <div class="telemetry-card fps-card">
-          <div class="card-title-row">
-            <div class="card-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                <line x1="8" y1="21" x2="16" y2="21"></line>
-                <line x1="12" y1="17" x2="12" y2="21"></line>
-              </svg>
-              <span>Прогноз FPS в играх</span>
+          <!-- Forecast Category Switcher Tabs -->
+          <div class="forecast-tabs">
+            <button id="btnTabGaming" class="forecast-tab-btn active" data-forecast-tab="gaming">
+              <span id="txtTabGaming">🎮 Гейминг FPS</span>
+            </button>
+            <button id="btnTabWorkstation" class="forecast-tab-btn" data-forecast-tab="workstation">
+              <span id="txtTabWorkstation">⚡ Тесты & Работа</span>
+            </button>
+          </div>
+
+          <!-- A. GAMING TAB CONTENT -->
+          <div id="forecastGamingView" class="forecast-view-panel">
+            <div class="card-title-row" style="margin-top: 8px;">
+              <div class="card-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                  <line x1="8" y1="21" x2="16" y2="21"></line>
+                  <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <span id="txtGamingTitle">Прогноз FPS</span>
+              </div>
+
+              <!-- Resolution Switcher -->
+              <div class="res-selector">
+                <button class="res-btn active" data-res="1080p">1080p</button>
+                <button class="res-btn" data-res="1440p">2K</button>
+                <button class="res-btn" data-res="4k">4K</button>
+              </div>
             </div>
 
-            <!-- Resolution Switcher -->
-            <div class="res-selector">
-              <button class="res-btn active" data-res="1080p">1080p</button>
-              <button class="res-btn" data-res="1440p">2K</button>
-              <button class="res-btn" data-res="4k">4K</button>
+            <!-- Games List with Average FPS & 1% Low FPS -->
+            <div class="fps-games-list" id="fpsGamesContainer">
+              <!-- Populated dynamically via script.js -->
+            </div>
+
+            <!-- System Balance & Bottleneck Analyzer -->
+            <div class="bottleneck-panel" id="bottleneckPanel">
+              <div class="bottleneck-header">
+                <span class="bottleneck-title-text" id="txtBottleneckTitle">Баланс CPU и GPU</span>
+                <span class="bottleneck-pct" id="bottleneckPct">98% (Идеал)</span>
+              </div>
+              <div class="bottleneck-meter-track">
+                <div class="bottleneck-meter-fill" id="bottleneckFill" style="width: 98%;"></div>
+              </div>
+              <div class="bottleneck-desc" id="bottleneckDesc">
+                Процессор и видеокарта отлично согласованы. Узких мест нет.
+              </div>
+            </div>
+
+            <!-- Recommended Display Recommendation -->
+            <div class="display-rec-panel" id="displayRecPanel">
+              <span class="rec-icon">🖥️</span>
+              <div class="rec-text-wrap">
+                <div class="rec-label" id="txtRecLabel">Рекомендуемый монитор:</div>
+                <div class="rec-value" id="displayRecValue">144-165 Гц 2K QHD (1440p) IPS/OLED</div>
+              </div>
             </div>
           </div>
 
-          <div class="fps-games-list" id="fpsGamesContainer">
-            <!-- Populated dynamically via script.js -->
+          <!-- B. WORKSTATION & BENCHMARKS TAB CONTENT -->
+          <div id="forecastWorkstationView" class="forecast-view-panel" style="display: none;">
+            <div class="workstation-bench-list" id="workstationContainer">
+              <!-- Populated dynamically via script.js -->
+            </div>
+
+            <!-- Thermals and Acoustics Forecast -->
+            <div class="thermal-forecast-card" id="thermalForecastCard">
+              <div class="thermal-header">
+                <span id="txtThermalTitle">🌡️ Температура и акустика под нагрузкой</span>
+              </div>
+              <div class="thermal-stats-grid">
+                <div class="thermal-item">
+                  <span class="thermal-label">CPU под стрессом:</span>
+                  <span class="thermal-val" id="cpuTempForecast">~62°C (Норма)</span>
+                </div>
+                <div class="thermal-item">
+                  <span class="thermal-label">GPU под нагрузкой:</span>
+                  <span class="thermal-val" id="gpuTempForecast">~64°C (Холодно)</span>
+                </div>
+                <div class="thermal-item">
+                  <span class="thermal-label">Уровень шума:</span>
+                  <span class="thermal-val" id="noiseLevelForecast">~31 дБ (Тихий шелест)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -462,6 +527,13 @@
               <span>Текущие узлы</span>
             </div>
             <button id="copySummaryBtn" class="btn-micro-action" title="Скопировать список">Копировать</button>
+          </div>
+
+          <!-- High-Level Real Hardware Quick Badges -->
+          <div class="quick-spec-badges" id="quickSpecBadges">
+            <span class="spec-badge" id="badgeRamSummary">32 ГБ DDR5</span>
+            <span class="spec-badge" id="badgeVramSummary">16 ГБ VRAM</span>
+            <span class="spec-badge" id="badgeSsdSpeed">NVMe PCIe 4.0</span>
           </div>
 
           <div class="mini-spec-list" id="miniSpecList">

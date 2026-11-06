@@ -831,38 +831,226 @@ class CyberPC3DViewer {
     }
   }
 
-  // Realistic Rear I/O Ports - docked flush against rear wall at z = -8.7
+  // Realistic Rear I/O Ports - Full Authentic Integrated Motherboard I/O Shield docked flush at z = -8.72
   buildIoPorts() {
-    const metalPortMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.2 });
+    const isWhite = this.currentMbId.includes('white');
+    const isRog = this.currentMbId.includes('z790') || this.currentMbId.includes('hero');
+
+    // 1. HIGH-DPI CANVAS TEXTURE FOR REAR I/O SHIELD FACEPLATE
+    const ioShieldTex = this.createCanvasTexture(`io_shield_plate_${this.currentMbId}`, 256, 512, (ctx, w, h) => {
+      // Matte black / silver brushed metal background
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      if (isWhite) {
+        grad.addColorStop(0, '#f8fafc');
+        grad.addColorStop(0.5, '#e2e8f0');
+        grad.addColorStop(1, '#cbd5e1');
+      } else {
+        grad.addColorStop(0, '#090d16');
+        grad.addColorStop(0.5, '#131926');
+        grad.addColorStop(1, '#0b0f1a');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Outer bezel border
+      ctx.strokeStyle = isWhite ? '#94a3b8' : (isRog ? '#e11d48' : '#00f3ff');
+      ctx.lineWidth = 4;
+      ctx.strokeRect(4, 4, w - 8, h - 8);
+
+      // Brand Logo at top
+      ctx.fillStyle = isWhite ? '#0284c7' : (isRog ? '#ff0055' : '#00f3ff');
+      ctx.font = 'bold 20px "Orbitron", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(isRog ? 'ROG MAXIMUS' : (isWhite ? 'AORUS ICE' : 'AORUS ELITE'), w / 2, 34);
+
+      ctx.fillStyle = isWhite ? '#475569' : '#94a3b8';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText('ULTRA DURABLE I/O', w / 2, 48);
+
+      // Silkscreen Port Labels along the plate
+      ctx.font = '9px monospace';
+      ctx.fillStyle = isWhite ? '#334155' : '#64748b';
+      ctx.fillText('CLR CMOS / BIOS', w / 2, 85);
+      ctx.fillText('HDMI 2.1 / DP 1.4', w / 2, 145);
+      ctx.fillText('USB 3.2 5G (BLUE)', w / 2, 215);
+      ctx.fillText('2.5G LAN / USB 10G', w / 2, 305);
+      ctx.fillText('TYPE-C 40Gbps', w / 2, 365);
+      ctx.fillText('WIFI 7 ANTENNA', w / 2, 415);
+      ctx.fillText('7.1 HD AUDIO / OPTICAL', w / 2, 465);
+    });
+
+    const shieldMat = new THREE.MeshStandardMaterial({
+      map: ioShieldTex,
+      metalness: isWhite ? 0.4 : 0.88,
+      roughness: 0.25
+    });
+
+    // Motherboard I/O Shield Faceplate (spanning between PCB at x=5.5 and inner chassis at x=3.6)
+    const shieldPlate = new THREE.Mesh(new THREE.BoxGeometry(1.9, 5.4, 0.08), shieldMat);
+    shieldPlate.position.set(4.55, 3.8, -8.72);
+    this.mbMeshGroup.add(shieldPlate);
+
+    // Common Port Materials
+    const metalPortMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.15 });
+    const blackInsulator = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.7 });
     const blueUsbMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
-    const goldAudioMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1 });
+    const redUsbMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.96, roughness: 0.12 });
+    const buttonMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4 });
 
-    // USB Ports (Stacked)
-    for (let i = 0; i < 3; i++) {
-      const portBox = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 0.55), metalPortMat);
-      portBox.position.set(5.25, 5.2 - i * 0.7, -8.7);
-      this.mbMeshGroup.add(portBox);
+    // 1. Clear CMOS & BIOS Flashback Micro-Buttons
+    const btnCmos = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.14, 16), buttonMat);
+    btnCmos.rotation.x = Math.PI / 2;
+    btnCmos.position.set(4.2, 5.9, -8.76);
+    this.mbMeshGroup.add(btnCmos);
 
-      const usbInsert = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.15, 0.35), blueUsbMat);
-      usbInsert.position.set(5.25, 5.2 - i * 0.7, -8.7);
-      this.mbMeshGroup.add(usbInsert);
+    const btnBios = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.14, 16), buttonMat);
+    btnBios.rotation.x = Math.PI / 2;
+    btnBios.position.set(4.9, 5.9, -8.76);
+    this.mbMeshGroup.add(btnBios);
+
+    const biosLed = new THREE.Mesh(
+      new THREE.CircleGeometry(0.04, 12),
+      new THREE.MeshBasicMaterial({ color: 0x00ff66 })
+    );
+    biosLed.position.set(5.15, 5.9, -8.78);
+    this.mbMeshGroup.add(biosLed);
+
+    // 2. Video Out (DisplayPort 1.4 & HDMI 2.1)
+    const dpHousing = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.28, 0.14), metalPortMat);
+    dpHousing.position.set(4.2, 5.3, -8.76);
+    this.mbMeshGroup.add(dpHousing);
+    const dpCenter = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.14, 0.15), blackInsulator);
+    dpCenter.position.set(4.2, 5.3, -8.76);
+    this.mbMeshGroup.add(dpCenter);
+
+    const hdmiHousing = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.24, 0.14), goldMat);
+    hdmiHousing.position.set(4.9, 5.3, -8.76);
+    this.mbMeshGroup.add(hdmiHousing);
+
+    // 3. Dual USB 2.0 (Black for Keyboard & Mouse)
+    for (let u = 0; u < 2; u++) {
+      const uX = 4.2 + u * 0.7;
+      const usbBox = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 0.14), metalPortMat);
+      usbBox.position.set(uX, 4.7, -8.76);
+      this.mbMeshGroup.add(usbBox);
+      const usbBlack = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.15), blackInsulator);
+      usbBlack.position.set(uX, 4.7, -8.76);
+      this.mbMeshGroup.add(usbBlack);
     }
 
-    // WiFi Antenna SMA Connectors
-    for (let i = 0; i < 2; i++) {
-      const sma = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.3, 12), goldAudioMat);
-      sma.rotation.x = Math.PI / 2;
-      sma.position.set(5.25, 3.2 - i * 0.4, -8.7);
-      this.mbMeshGroup.add(sma);
+    // 4. Quad USB 3.2 Gen 1 (5Gbps Vibrant Blue Ports)
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 2; c++) {
+        const uX = 4.2 + c * 0.7;
+        const uY = 4.15 - r * 0.48;
+        const usbBox = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.14), metalPortMat);
+        usbBox.position.set(uX, uY, -8.76);
+        this.mbMeshGroup.add(usbBox);
+        const usbBlue = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.15), blueUsbMat);
+        usbBlue.position.set(uX, uY, -8.76);
+        this.mbMeshGroup.add(usbBlue);
+      }
     }
 
-    // Gold 3.5mm Audio Jacks
-    for (let i = 0; i < 3; i++) {
-      const jack = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.25, 16), goldAudioMat);
+    // 5. RJ-45 2.5G Gigabit Ethernet Socket + Dual USB 3.2 Gen 2 (Red 10Gbps)
+    const lanBox = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.52, 0.16), metalPortMat);
+    lanBox.position.set(4.25, 3.1, -8.76);
+    this.mbMeshGroup.add(lanBox);
+
+    const lanHole = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 0.17), blackInsulator);
+    lanHole.position.set(4.25, 3.1, -8.76);
+    this.mbMeshGroup.add(lanHole);
+
+    // LAN Status LEDs (Green Link & Orange Activity)
+    const lanLedG = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.08), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
+    lanLedG.position.set(4.08, 3.32, -8.77);
+    this.mbMeshGroup.add(lanLedG);
+    const lanLedO = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.08), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+    lanLedO.position.set(4.42, 3.32, -8.77);
+    this.mbMeshGroup.add(lanLedO);
+
+    // Red USB 3.2 Gen 2 (10G)
+    const usbRedBox = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.3, 0.14), metalPortMat);
+    usbRedBox.position.set(4.95, 3.1, -8.76);
+    this.mbMeshGroup.add(usbRedBox);
+    const usbRed = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.15), redUsbMat);
+    usbRed.position.set(4.95, 3.1, -8.76);
+    this.mbMeshGroup.add(usbRed);
+
+    // 6. Dual USB Type-C Reversible Ports (Reversible Oval Housings)
+    for (let t = 0; t < 2; t++) {
+      const tX = 4.3 + t * 0.6;
+      const tcHousing = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.18, 0.14), metalPortMat);
+      tcHousing.position.set(tX, 2.55, -8.76);
+      this.mbMeshGroup.add(tcHousing);
+      const tcTongue = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.15), blackInsulator);
+      tcTongue.position.set(tX, 2.55, -8.76);
+      this.mbMeshGroup.add(tcTongue);
+    }
+
+    // 7. Dual Gold-Plated RP-SMA WiFi 7 / 6E Antenna Threaded Terminals with Hex Base
+    for (let a = 0; a < 2; a++) {
+      const aX = 4.3 + a * 0.65;
+      const smaNut = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 6), goldMat);
+      smaNut.rotation.x = Math.PI / 2;
+      smaNut.position.set(aX, 2.05, -8.76);
+      this.mbMeshGroup.add(smaNut);
+
+      const smaThread = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.22, 16), goldMat);
+      smaThread.rotation.x = Math.PI / 2;
+      smaThread.position.set(aX, 2.05, -8.84);
+      this.mbMeshGroup.add(smaThread);
+
+      const smaPin = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.12, 8), metalPortMat);
+      smaPin.rotation.x = Math.PI / 2;
+      smaPin.position.set(aX, 2.05, -8.92);
+      this.mbMeshGroup.add(smaPin);
+    }
+
+    // 8. Optical S/PDIF TOSLINK Audio Out (Square port with Glowing Red Core)
+    const spdifBox = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.14), blackInsulator);
+    spdifBox.position.set(4.2, 1.45, -8.76);
+    this.mbMeshGroup.add(spdifBox);
+
+    const spdifGlow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.08, 12),
+      new THREE.MeshBasicMaterial({ color: 0xff0044 })
+    );
+    spdifGlow.position.set(4.2, 1.45, -8.84);
+    this.mbMeshGroup.add(spdifGlow);
+
+    // 9. 5x Gold-Plated 3.5mm HD Surround Audio Jacks with Color-Coded Silicone Rings
+    const jackColors = [
+      0x22c55e, // Lime Green: Front Out / Headphone
+      0xec4899, // Pink: Mic In
+      0x38bdf8, // Light Blue: Line In
+      0x18181b, // Black: Rear Speaker
+      0xf97316  // Orange: Center / Subwoofer
+    ];
+
+    jackColors.forEach((colorHex, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const jX = 4.65 + col * 0.42;
+      const jY = 1.55 - row * 0.38;
+
+      const ring = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.16, 0.06, 16),
+        new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.4 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(jX, jY, -8.76);
+      this.mbMeshGroup.add(ring);
+
+      const jack = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 0.12, 16),
+        goldMat
+      );
       jack.rotation.x = Math.PI / 2;
-      jack.position.set(5.25, 2.0 - i * 0.45, -8.7);
+      jack.position.set(jX, jY, -8.8);
       this.mbMeshGroup.add(jack);
-    }
+    });
   }
 
   // 2. CPU & SOCKET (AM5/LGA1700 Mechanical Bracket + Lever)
@@ -1611,57 +1799,62 @@ class CyberPC3DViewer {
     gpuAssembly.add(psuCableGrommet);
 
     // ------------------------------------------------------------------------
-    // 7. REAR PCIe BRACKET & PLUGGED DISPLAY CABLE (DP / HDMI OUT)
+    // 7. REAR PCIe BRACKET & AUTHENTIC DISPLAY CONNECTORS (3x DP 2.1 + 1x HDMI 2.1a)
     // ------------------------------------------------------------------------
-    // Stainless Steel Triple-Slot Rear Bracket
+    // Stainless Steel Triple-Slot Rear Bracket (Clean Authentic Mount, No Dangling External Wires)
+    const bracketMat = new THREE.MeshStandardMaterial({
+      color: 0xd4d4d8,
+      metalness: 0.95,
+      roughness: 0.18
+    });
     const bracketMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, cardHeight + 1.2, 3.8),
-      new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.95, roughness: 0.15 })
+      new THREE.BoxGeometry(cardWidth * 0.92, cardHeight + 0.9, 0.08),
+      bracketMat
     );
-    bracketMesh.position.set(cardWidth / 2 - 0.1, 0.5, -cardLength / 2);
+    bracketMesh.position.set(0, 0.2, -cardLength / 2 - 0.04);
     gpuAssembly.add(bracketMesh);
 
-    // DisplayPort and HDMI port sockets
-    const portMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.3 });
-    const portGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.95, roughness: 0.1 });
+    // Stamped Airflow Ventilation Cutout Slits on Bracket
+    const slitMat = new THREE.MeshBasicMaterial({ color: 0x090d16 });
+    for (let s = 0; s < 4; s++) {
+      const slit = new THREE.Mesh(new THREE.BoxGeometry(cardWidth * 0.7, 0.12, 0.09), slitMat);
+      slit.position.set(0, cardHeight / 2 - 0.3 - s * 0.35, -cardLength / 2 - 0.04);
+      gpuAssembly.add(slit);
+    }
+
+    // 2x Knurled Chassis Mounting Thumbscrews at the top bracket lip
+    const thumbScrewMat = new THREE.MeshStandardMaterial({ color: 0xa1a1aa, metalness: 0.9, roughness: 0.2 });
+    [-cardWidth * 0.35, cardWidth * 0.35].forEach(x => {
+      const ts = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.18, 16), thumbScrewMat);
+      ts.rotation.x = Math.PI / 2;
+      ts.position.set(x, cardHeight / 2 + 0.55, -cardLength / 2 - 0.06);
+      gpuAssembly.add(ts);
+    });
+
+    // 3x High-Precision DisplayPort 2.1 Ports (Recessed Nickel Shield + Black Insulator Tongue)
+    const portMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.95, roughness: 0.15 });
+    const portInsulator = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.8 });
+    const portGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.96, roughness: 0.12 });
 
     for (let p = 0; p < 3; p++) {
-      // 3x DisplayPort Ports
-      const dpPort = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.35, 0.55), portMat);
-      dpPort.position.set(cardWidth / 2 - 0.1, 0.2 + p * 0.65, -cardLength / 2 - 0.06);
-      gpuAssembly.add(dpPort);
+      const pX = -cardWidth * 0.3 + p * 0.65;
+      const dpOuter = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.26, 0.16), portMat);
+      dpOuter.position.set(pX, -0.2, -cardLength / 2 - 0.08);
+      gpuAssembly.add(dpOuter);
+
+      const dpTongue = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.17), portInsulator);
+      dpTongue.position.set(pX, -0.2, -cardLength / 2 - 0.08);
+      gpuAssembly.add(dpTongue);
     }
-    // 1x HDMI 2.1 Port
-    const hdmiPort = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.28, 0.55), portGold);
-    hdmiPort.position.set(cardWidth / 2 - 0.1, -0.6, -cardLength / 2 - 0.06);
-    gpuAssembly.add(hdmiPort);
 
-    // PLUGGED-IN HIGH-SPEED DISPLAY CABLE (Connecting from GPU Rear Port out the back)
-    const plugHousing = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35, 0.55, 1.4),
-      new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.25 })
-    );
-    plugHousing.position.set(cardWidth / 2 - 0.1, 0.2, -cardLength / 2 - 0.75);
-    gpuAssembly.add(plugHousing);
+    // 1x HDMI 2.1a Gold Contact Port
+    const hdmiOuter = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.22, 0.16), portGold);
+    hdmiOuter.position.set(-cardWidth * 0.3, -0.7, -cardLength / 2 - 0.08);
+    gpuAssembly.add(hdmiOuter);
 
-    const strainBoot = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22, 0.18, 0.6, 14),
-      new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.9 })
-    );
-    strainBoot.rotation.x = Math.PI / 2;
-    strainBoot.position.set(cardWidth / 2 - 0.1, 0.2, -cardLength / 2 - 1.6);
-    gpuAssembly.add(strainBoot);
-
-    const dispCableCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(cardWidth / 2 - 0.1, 0.2, -cardLength / 2 - 1.8),
-      new THREE.Vector3(cardWidth / 2 - 0.2, 0.1, -cardLength / 2 - 3.2),
-      new THREE.Vector3(cardWidth / 2 - 0.4, -0.8, -cardLength / 2 - 5.5)
-    ]);
-    const dispCableMesh = new THREE.Mesh(
-      new THREE.TubeGeometry(dispCableCurve, 18, 0.16, 12, false),
-      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.3 })
-    );
-    gpuAssembly.add(dispCableMesh);
+    const hdmiTongue = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.08, 0.17), portInsulator);
+    hdmiTongue.position.set(-cardWidth * 0.3, -0.7, -cardLength / 2 - 0.08);
+    gpuAssembly.add(hdmiTongue);
 
     // ------------------------------------------------------------------------
     // 8. TELESCOPING ALUMINUM ANTI-SAG SUPPORT COLUMN
@@ -2059,142 +2252,120 @@ class CyberPC3DViewer {
     backMesh.position.set(0, 0, -depth / 2);
     this.chassisGroup.add(backMesh);
 
-    // Motherboard Rear I/O Cutout Shield (Stainless Steel Mirror Plate)
-    const ioShield = new THREE.Mesh(
-      new THREE.BoxGeometry(0.25, 5.2, 2.2),
+    // Motherboard Rear I/O Cutout Bezel (Clean Stamped Steel Frame aligning with Motherboard I/O Shield)
+    const ioBezel = new THREE.Mesh(
+      new THREE.BoxGeometry(2.1, 5.6, 0.12),
       portSteelMat
     );
-    ioShield.position.set(width / 2 - 1.2, 3.8, -depth / 2 + 0.15);
-    this.chassisGroup.add(ioShield);
+    ioBezel.position.set(4.55, 3.8, -depth / 2 + 0.18);
+    this.chassisGroup.add(ioBezel);
 
-    // Rear USB 3.0 Ports (4x Stacked with Blue Plastic Tongues)
-    for (let u = 0; u < 4; u++) {
-      const uY = 5.4 - u * 0.55;
-      const uZ = -depth / 2 + 0.05;
-      const usbPortHousing = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.48), portSteelMat);
-      usbPortHousing.position.set(width / 2 - 1.2, uY, uZ);
-      this.chassisGroup.add(usbPortHousing);
-
-      const usbBlueTongue = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.32), blueUsbMat);
-      usbBlueTongue.position.set(width / 2 - 1.2, uY, uZ);
-      this.chassisGroup.add(usbBlueTongue);
-    }
-
-    // Rear USB Type-C Port
-    const typeCPort = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.18, 0.38),
-      portSteelMat
+    const ioInnerCutout = new THREE.Mesh(
+      new THREE.BoxGeometry(1.92, 5.42, 0.14),
+      new THREE.MeshBasicMaterial({ color: 0x05070c })
     );
-    typeCPort.position.set(width / 2 - 1.2, 3.0, -depth / 2 + 0.05);
-    this.chassisGroup.add(typeCPort);
+    ioInnerCutout.position.set(4.55, 3.8, -depth / 2 + 0.18);
+    this.chassisGroup.add(ioInnerCutout);
 
-    // RJ45 2.5G Gigabit Ethernet Jack with Green & Amber Link LEDs
-    const rj45Mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 0.52, 0.56),
-      portSteelMat
-    );
-    rj45Mesh.position.set(width / 2 - 1.2, 2.4, -depth / 2 + 0.05);
-    this.chassisGroup.add(rj45Mesh);
-
-    const rjLed1 = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.08), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
-    rjLed1.position.set(width / 2 - 1.2, 2.6, -depth / 2 - 0.02);
-    this.chassisGroup.add(rjLed1);
-
-    const rjLed2 = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.08), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
-    rjLed2.position.set(width / 2 - 1.2, 2.6, -depth / 2 + 0.12);
-    this.chassisGroup.add(rjLed2);
-
-    // Dual Gold-Plated SMA Threaded WiFi Antenna Connectors & High-Gain Antennas
-    for (let a = 0; a < 2; a++) {
-      const smaZ = -depth / 2 + 0.2;
-      const smaY = 1.7 - a * 0.45;
-      const smaBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.3, 12), goldMat);
-      smaBase.rotation.x = Math.PI / 2;
-      smaBase.position.set(width / 2 - 1.2, smaY, smaZ - 0.2);
-      this.chassisGroup.add(smaBase);
-
-      // Angled Articulated Black WiFi Antenna Sticks
-      const ant = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.08, 0.11, 2.8, 12),
-        cableSheathMat
-      );
-      ant.rotation.z = (a === 0 ? 0.35 : -0.35);
-      ant.rotation.x = -0.4;
-      ant.position.set(width / 2 - 1.2 + (a === 0 ? 0.4 : -0.4), smaY + 1.2, smaZ - 0.9);
-      this.chassisGroup.add(ant);
-    }
-
-    // Rear Gold 3.5mm Audio Jacks (Mic, Line Out, Rear, C/Sub)
-    for (let j = 0; j < 3; j++) {
-      const jack = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.22, 14), goldMat);
-      jack.rotation.x = Math.PI / 2;
-      jack.position.set(width / 2 - 1.2, 0.7 - j * 0.35, -depth / 2);
-      this.chassisGroup.add(jack);
-    }
-
-    // PLUGGED REAR USB PERIPHERAL CABLE (Looping out the back)
-    const rearUsbPlug = new THREE.Mesh(
-      new THREE.BoxGeometry(0.28, 0.34, 0.9),
-      cableSheathMat
-    );
-    rearUsbPlug.position.set(width / 2 - 1.2, 5.4, -depth / 2 - 0.48);
-    this.chassisGroup.add(rearUsbPlug);
-
-    const rearUsbCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(width / 2 - 1.2, 5.4, -depth / 2 - 0.9),
-      new THREE.Vector3(width / 2 - 0.8, 4.6, -depth / 2 - 2.2),
-      new THREE.Vector3(width / 2 - 0.2, 3.2, -depth / 2 - 4.2)
-    ]);
-    const rearUsbTube = new THREE.Mesh(
-      new THREE.TubeGeometry(rearUsbCurve, 16, 0.11, 8, false),
-      cableSheathMat
-    );
-    this.chassisGroup.add(rearUsbTube);
-
-    // 7x PCIe Expansion Slot Covers with Honeycomb Ventilation
+    // 7x PCIe Expansion Slot Covers with Honeycomb Airflow Perforations (No dangling wires)
     for (let p = 0; p < 7; p++) {
+      const pY = 1.2 - p * 0.65;
       const pcieCover = new THREE.Mesh(
-        new THREE.BoxGeometry(0.35, 0.4, 2.2),
-        new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.9 })
+        new THREE.BoxGeometry(3.6, 0.44, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.9, roughness: 0.25 })
       );
-      pcieCover.position.set(width / 2 - 1.2, 1.2 - p * 0.65, -depth / 2 + 0.3);
+      pcieCover.position.set(2.4, pY, -depth / 2 + 0.18);
       this.chassisGroup.add(pcieCover);
+
+      // Perforated slot ventilation cutouts
+      for (let v = 0; v < 4; v++) {
+        const slotVent = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.12, 0.12),
+          new THREE.MeshBasicMaterial({ color: 0x05070e })
+        );
+        slotVent.position.set(1.4 + v * 0.7, pY, -depth / 2 + 0.18);
+        this.chassisGroup.add(slotVent);
+      }
     }
 
-    // REAR PSU AC POWER PANEL & HEAVY-DUTY AC POWER CABLE
-    const acSocketPanel = new THREE.Mesh(
-      new THREE.BoxGeometry(2.4, 1.6, 0.2),
-      new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.7 })
-    );
-    acSocketPanel.position.set(-width / 2 + 2.2, -height / 2 + 1.8, -depth / 2 + 0.1);
-    this.chassisGroup.add(acSocketPanel);
+    // ------------------------------------------------------------------------
+    // REAR PSU AC POWER PANEL (Authentic 3-Pin IEC C14 Receptacle, Rocker Switch & Honeycomb)
+    // ------------------------------------------------------------------------
+    const psuBackWidth = 5.2;
+    const psuBackHeight = 3.6;
+    const psuY = -height / 2 + 2.0;
+    const psuX = -width / 2 + 2.9;
 
-    // Rocker Switch (I / O) with LED dot
-    const rockerSwitch = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 0.7, 0.3),
-      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.5 })
+    // PSU Rear Exhaust Honeycomb Ventilation Plate
+    const psuRearVent = new THREE.Mesh(
+      new THREE.PlaneGeometry(psuBackWidth, psuBackHeight),
+      new THREE.MeshStandardMaterial({
+        map: this.getPerforatedMeshTexture(false, true),
+        roughness: 0.5,
+        metalness: 0.85
+      })
     );
-    rockerSwitch.position.set(-width / 2 + 1.4, -height / 2 + 1.8, -depth / 2 - 0.05);
-    this.chassisGroup.add(rockerSwitch);
+    psuRearVent.position.set(psuX, psuY, -depth / 2 - 0.02);
+    this.chassisGroup.add(psuRearVent);
 
-    // Plugged Heavy AC Power Cord (IEC C13 Molded Head + Braided Cord)
-    const acPlugHead = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.9, 1.2),
-      cableSheathMat
+    // Standard Trapezoidal IEC C14 3-Pin Power Receptacle Housing
+    const acReceptacle = new THREE.Mesh(
+      new THREE.BoxGeometry(1.2, 0.85, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0x0a0a0c, roughness: 0.8 })
     );
-    acPlugHead.position.set(-width / 2 + 2.7, -height / 2 + 1.8, -depth / 2 - 0.6);
-    this.chassisGroup.add(acPlugHead);
+    acReceptacle.position.set(psuX + 1.4, psuY, -depth / 2 - 0.04);
+    this.chassisGroup.add(acReceptacle);
 
-    const acCordCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-width / 2 + 2.7, -height / 2 + 1.8, -depth / 2 - 1.2),
-      new THREE.Vector3(-width / 2 + 2.4, -height / 2 + 0.8, -depth / 2 - 2.8),
-      new THREE.Vector3(-width / 2 + 1.8, -height / 2 - 0.4, -depth / 2 - 5.0)
-    ]);
-    const acCordMesh = new THREE.Mesh(
-      new THREE.TubeGeometry(acCordCurve, 16, 0.22, 10, false),
-      cableSheathMat
+    // 3 Solid Brass Prongs (Earth, Live, Neutral)
+    const prongMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.95, roughness: 0.1 });
+    const prongPositions = [
+      [psuX + 1.4, psuY + 0.18],  // Top: Ground
+      [psuX + 1.18, psuY - 0.14], // Bottom Left: Neutral
+      [psuX + 1.62, psuY - 0.14]  // Bottom Right: Live
+    ];
+    prongPositions.forEach(([px, py]) => {
+      const prong = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.16), prongMat);
+      prong.position.set(px, py, -depth / 2 - 0.08);
+      this.chassisGroup.add(prong);
+    });
+
+    // Heavy-Duty Rocker Power Switch (Illuminated Red Face with 'I' / 'O' Markings)
+    const rockerFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(0.65, 0.95, 0.18),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6 })
     );
-    this.chassisGroup.add(acCordMesh);
+    rockerFrame.position.set(psuX + 0.45, psuY, -depth / 2 - 0.04);
+    this.chassisGroup.add(rockerFrame);
+
+    const rockerRocker = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.75, 0.12),
+      new THREE.MeshStandardMaterial({
+        color: 0xef4444,
+        emissive: 0xb91c1c,
+        emissiveIntensity: 0.4,
+        roughness: 0.3
+      })
+    );
+    rockerRocker.rotation.x = 0.15; // Realistic tilted rocker position (ON state)
+    rockerRocker.position.set(psuX + 0.45, psuY, -depth / 2 - 0.08);
+    this.chassisGroup.add(rockerRocker);
+
+    // Hybrid Fan / Eco Zero-RPM Push Button
+    const ecoBtnBezel = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.24, 0.16, 16),
+      new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.5 })
+    );
+    ecoBtnBezel.rotation.x = Math.PI / 2;
+    ecoBtnBezel.position.set(psuX - 0.45, psuY, -depth / 2 - 0.04);
+    this.chassisGroup.add(ecoBtnBezel);
+
+    const ecoBtn = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.16, 0.16, 0.12, 16),
+      new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.6, roughness: 0.3 })
+    );
+    ecoBtn.rotation.x = Math.PI / 2;
+    ecoBtn.position.set(psuX - 0.45, psuY, -depth / 2 - 0.09);
+    this.chassisGroup.add(ecoBtn);
 
     // ------------------------------------------------------------------------
     // 2. MOTHERBOARD TRAY WITH GROMMETS & CPU CUTOUT

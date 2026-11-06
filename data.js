@@ -46,6 +46,11 @@ const I18N = {
     filterHigh: 'Топ',
     filterPrestige: 'Флагман',
     benchmarkTitle: 'Тест FPS в играх',
+    tabGamingFps: '🎮 Гейминг FPS',
+    tabWorkstation: '⚡ Рендеринг и Бенчмарки',
+    bottleneckTitle: 'Баланс CPU и GPU',
+    thermalTitle: 'Температура и Шум',
+    recommendedMonitor: 'Рекомендуемый монитор',
     specsTitle: 'Характеристики сборки',
     exportBtn: 'Экспорт конфигурации',
     partsDockTitle: 'Управление: Снять / Установить детали',
@@ -127,6 +132,11 @@ const I18N = {
     filterHigh: 'Top',
     filterPrestige: 'Flagman',
     benchmarkTitle: 'O‘yinlarda FPS testi',
+    tabGamingFps: '🎮 O‘yinlar FPS',
+    tabWorkstation: '⚡ Render va Benchmark',
+    bottleneckTitle: 'CPU va GPU muvozanati',
+    thermalTitle: 'Harorat va Shovqin',
+    recommendedMonitor: 'Tavsiya etilgan monitor',
     specsTitle: 'Terilma xususiyatlari',
     exportBtn: 'Konfiguratsiyani yuklab olish',
     partsDockTitle: 'Boshqaruv: Qismlarni yechish / o‘rnatish',
@@ -208,6 +218,11 @@ const I18N = {
     filterHigh: 'High-End',
     filterPrestige: 'Flagship',
     benchmarkTitle: 'Game FPS Benchmarks',
+    tabGamingFps: '🎮 Gaming FPS',
+    tabWorkstation: '⚡ Workstation & Benchmarks',
+    bottleneckTitle: 'CPU & GPU Balance',
+    thermalTitle: 'Thermals & Noise',
+    recommendedMonitor: 'Recommended Display',
     specsTitle: 'Build Specifications',
     exportBtn: 'Export Build Specs',
     partsDockTitle: 'Parts Control: Remove / Install Components',
@@ -887,11 +902,74 @@ const PC_DATA = {
     ]
   },
 
-  // Games Benchmark Data
+  // Realistic Games Benchmark & Telemetry Data
   games: [
-    { id: 'cs2', name: 'Counter-Strike 2', genre: 'Киберспорт / Source 2', baseFps: 180, cpuWeight: 0.45, gpuWeight: 0.55 },
-    { id: 'cyberpunk', name: 'Cyberpunk 2077', genre: 'Ultra + Ray Tracing', baseFps: 42, cpuWeight: 0.25, gpuWeight: 0.75 },
-    { id: 'gta5', name: 'GTA V / GTA 6 Ready', genre: 'Открытый мир / Very High', baseFps: 110, cpuWeight: 0.35, gpuWeight: 0.65 }
+    {
+      id: 'cyberpunk',
+      name: 'Cyberpunk 2077: Phantom Liberty',
+      genre: 'Ultra RT + DLSS 3.5 / FSR',
+      preset: 'Ultra + Ray Tracing',
+      baseFps: 48,
+      cpuWeight: 0.28,
+      gpuWeight: 0.72,
+      lowFpsRatio: 0.74,
+      targetRes: '1440p'
+    },
+    {
+      id: 'cs2',
+      name: 'Counter-Strike 2',
+      genre: 'Киберспорт / Source 2 Engine',
+      preset: 'Competitive High',
+      baseFps: 210,
+      cpuWeight: 0.55,
+      gpuWeight: 0.45,
+      lowFpsRatio: 0.70,
+      targetRes: '1080p'
+    },
+    {
+      id: 'gta5',
+      name: 'GTA V / GTA VI Ready',
+      genre: 'Открытый мир / Very High Density',
+      preset: 'Very High',
+      baseFps: 125,
+      cpuWeight: 0.38,
+      gpuWeight: 0.62,
+      lowFpsRatio: 0.76,
+      targetRes: '1440p'
+    },
+    {
+      id: 'warzone',
+      name: 'Call of Duty: Warzone / MW3',
+      genre: 'Battle Royale / FidelityFX CAS',
+      preset: 'Extreme Preset',
+      baseFps: 105,
+      cpuWeight: 0.35,
+      gpuWeight: 0.65,
+      lowFpsRatio: 0.72,
+      targetRes: '1440p'
+    },
+    {
+      id: 'forza5',
+      name: 'Forza Horizon 5',
+      genre: 'Гонки / Extreme Ray Tracing',
+      preset: 'Extreme',
+      baseFps: 110,
+      cpuWeight: 0.30,
+      gpuWeight: 0.70,
+      lowFpsRatio: 0.82,
+      targetRes: '1440p'
+    },
+    {
+      id: 'dota2',
+      name: 'Dota 2 / Valorant',
+      genre: 'Pro Esports 360Hz Ready',
+      preset: 'Max Settings',
+      baseFps: 260,
+      cpuWeight: 0.62,
+      gpuWeight: 0.38,
+      lowFpsRatio: 0.72,
+      targetRes: '1080p'
+    }
   ],
 
   // Presets

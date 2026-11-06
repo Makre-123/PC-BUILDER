@@ -1631,7 +1631,50 @@ body::before {
   color: #64748b;
 }
 
-/* FPS Meter */
+/* Forecast Switcher Tabs */
+.forecast-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  background: rgba(10, 14, 24, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.forecast-tab-btn {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.forecast-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.forecast-tab-btn.active {
+  color: #07080c;
+  background: linear-gradient(135deg, var(--neon-cyan), #38bdf8);
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+}
+
+.forecast-view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* FPS Meter & Game Items */
 .res-selector {
   display: flex;
   gap: 3px;
@@ -1667,24 +1710,49 @@ body::before {
 }
 
 .fps-game-item {
-  background: rgba(14, 18, 28, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(14, 18, 28, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
-  padding: 8px 10px;
+  padding: 9px 11px;
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.fps-game-item:hover {
+  border-color: rgba(0, 243, 255, 0.2);
+  transform: translateX(2px);
 }
 
 .fps-game-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+}
+
+.fps-game-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .fps-game-name {
   font-family: var(--font-ui);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #e2e8f0;
+  color: #f1f5f9;
+}
+
+.fps-game-preset {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.fps-numbers-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
 }
 
 .fps-number-badge {
@@ -1692,13 +1760,20 @@ body::before {
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--neon-green);
-  text-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+  text-shadow: 0 0 8px rgba(0, 255, 102, 0.35);
+  line-height: 1;
+}
+
+.fps-low-badge {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: #94a3b8;
 }
 
 .fps-bar-container {
   width: 100%;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.05);
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -1708,6 +1783,208 @@ body::before {
   background: linear-gradient(90deg, #00ff66, #00f3ff);
   border-radius: 3px;
   transition: width 0.45s ease;
+}
+
+/* System Balance & Bottleneck Analyzer */
+.bottleneck-panel {
+  background: rgba(12, 16, 26, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.bottleneck-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bottleneck-title-text {
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #cbd5e1;
+}
+
+.bottleneck-pct {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--neon-green);
+}
+
+.bottleneck-meter-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.bottleneck-meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff66, #00f3ff);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.bottleneck-desc {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #94a3b8;
+}
+
+/* Recommended Display Panel */
+.display-rec-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+}
+
+.rec-icon {
+  font-size: 1.25rem;
+}
+
+.rec-text-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.rec-label {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.rec-value {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+/* Workstation & Benchmark List */
+.workstation-bench-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.workstation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(14, 18, 28, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 9px 11px;
+}
+
+.workstation-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.workstation-icon {
+  font-size: 1.15rem;
+}
+
+.workstation-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workstation-title {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.workstation-sub {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.workstation-score-badge {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px rgba(0, 243, 255, 0.35);
+  text-align: right;
+}
+
+/* Thermals and Acoustics Card */
+.thermal-forecast-card {
+  background: rgba(12, 16, 26, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.thermal-header {
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+.thermal-stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.thermal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.thermal-label {
+  color: #94a3b8;
+}
+
+.thermal-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #22c55e;
+}
+
+/* Quick Spec Badges in Mini Spec Card */
+.quick-spec-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.spec-badge {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+  background: rgba(0, 243, 255, 0.08);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  color: var(--neon-cyan);
+  padding: 2px 7px;
+  border-radius: var(--radius-hud);
 }
 
 /* Mini Spec List */
